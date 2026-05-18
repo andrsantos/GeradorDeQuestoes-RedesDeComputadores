@@ -53,6 +53,9 @@ public class BancoQuestaoEntity {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime dataCriacao;
 
+    @Column(name = "origem", columnDefinition = "TEXT")
+    private String origem;
+
     @ManyToOne
     @JoinColumn(name = "arquivo_id")
     private PdfQuestaoEntity arquivoOrigem;
@@ -115,7 +118,6 @@ public class BancoQuestaoEntity {
     }
 
     
-
     public PdfQuestaoEntity getArquivoOrigem() {
         return this.arquivoOrigem;
     }
@@ -123,6 +125,16 @@ public class BancoQuestaoEntity {
     public void setArquivoOrigem(PdfQuestaoEntity arquivoOrigem) {
         this.arquivoOrigem = arquivoOrigem;
     }
+
+
+    public String getOrigem() {
+        return this.origem;
+    }
+
+    public void setOrigem(String origem) {
+        this.origem = origem;
+    }
+
 
 
 
