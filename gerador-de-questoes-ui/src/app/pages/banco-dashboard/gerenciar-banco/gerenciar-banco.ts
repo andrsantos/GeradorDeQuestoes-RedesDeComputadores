@@ -18,23 +18,20 @@ export class GerenciarBanco implements OnInit {
   questoes: BancoQuestao[] = [];          
   questoesExibidas: BancoQuestao[] = [];  
   topicosDisponiveis: string[] = [];
-  
   topicoSelecionado: string = '';
   ordemSelecionada: 'asc' | 'desc' = 'desc';
-
   isLoading = false;
   isEditModalOpen = false;
   isComentarioModalOpen = false;
   isCadastroModalOpen = false;
   isModoEdicao = false;
-  
   questaoEmEdicao: BancoQuestao | null = null;
   questaoComentario: BancoQuestao | null = null;
   novaQuestao: BancoQuestao = this.criarNovaQuestao();
-  
   objectKeys = Object.keys;
-
   searchTerm: string = '';
+  dataFiltro: string = '';
+
 
 
   constructor(
@@ -90,10 +87,16 @@ export class GerenciarBanco implements OnInit {
     );
   }
 
+    if (this.dataFiltro) {
+      resultado = resultado.filter(q => {
+        if (!q.dataCriacao) return false;
+        return q.dataCriacao.split('T')[0] === this.dataFiltro;
+      });
+    }
+
     resultado.sort((a, b) => {
       const dataA = a.dataCriacao ? new Date(a.dataCriacao).getTime() : 0;
       const dataB = b.dataCriacao ? new Date(b.dataCriacao).getTime() : 0;
-
       return this.ordemSelecionada === 'asc' 
         ? dataA - dataB 
         : dataB - dataA;
@@ -101,6 +104,18 @@ export class GerenciarBanco implements OnInit {
 
     this.questoesExibidas = resultado;
   }
+
+  onDataChange() {
+    this.aplicarFiltros();
+  }
+
+  limparFiltros() {
+    this.searchTerm = '';
+    this.topicoSelecionado = '';
+    this.dataFiltro = '';
+    this.aplicarFiltros();
+  }
+  
 
   onSearch() {
   this.aplicarFiltros();

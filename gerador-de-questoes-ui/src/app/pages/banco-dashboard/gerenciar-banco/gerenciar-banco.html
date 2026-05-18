@@ -20,6 +20,17 @@
       </div>
 
       <div class="filters-group">
+        <!-- Filtro de Data -->
+        <div class="filter-item">
+          <input 
+            type="date" 
+            [(ngModel)]="dataFiltro" 
+            (change)="onDataChange()"
+            class="date-input"
+            title="Filtrar por data de criação"
+          >
+        </div>
+
         <div class="filter-item">
           <!-- <label for="filterTopico">Tópico:</label> -->
           <select id="filterTopico" (change)="onTopicoChange($event)">
@@ -37,6 +48,15 @@
             <option value="asc">Mais antigas</option>
           </select>
         </div>
+
+        <div class="filter-item" *ngIf="dataFiltro || topicoSelecionado || searchTerm">
+            <button class="btn-limpar-filtros" (click)="limparFiltros()">
+              <span class="icon">🧹</span>
+              Limpar Filtros
+            </button>
+          </div>
+
+
       </div>
     </div>
   </header>

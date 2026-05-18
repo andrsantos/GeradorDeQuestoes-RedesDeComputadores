@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { GerenciamentoService } from '../../services/gerenciamento/gerenciamento-service';
 import { Cenario } from '../../models/cenario.model';
 import { Prompt } from '../../models/prompt.model';
+import { Documento } from '../../models/documento.model';
+import { DocumentoExibicao } from '../../models/documento-exibicao.model';
 
 @Component({
   selector: 'app-gerenciamento',
@@ -42,6 +44,14 @@ export class Gerenciamento implements OnInit {
   promptTemporario: any = {}; 
   showInsertPromptModal: boolean = false;
   insertPromptForm!: FormGroup;
+
+  // Variáveis de Documentos
+  listaDocumentos: Documento[] = [];
+  showChunkModal: boolean = false;
+  chunkSelecionado: Documento | null = null;
+  listaMateriais: DocumentoExibicao[] = [];
+
+
 
   constructor(private fb: FormBuilder, private gerenciamentoService: GerenciamentoService) { }
 
@@ -111,6 +121,20 @@ export class Gerenciamento implements OnInit {
         error: (error) => console.error('Erro ao listar prompts:', error)
       });
     }
+
+    if (request.filtro === 'documentation') {
+      request.filtro = 'DOCUMENTOS';
+      this.gerenciamentoService.listarDocumentosFiltrados().subscribe({
+        next: (materiais) => {
+          this.paginaAtual = 1;
+          this.listaMateriais = materiais;
+          console.log('Materiais listados:', materiais);
+        },
+        error: (error) => console.error('Erro ao listar materiais:', error)
+      });
+    }
+
+
   }
 
   
@@ -314,11 +338,73 @@ export class Gerenciamento implements OnInit {
 
   get totalPaginas(): number {
     const tipoAtivo = this.managementForm.get('tableType')?.value;
-    const totalRegistros = tipoAtivo === 'prompts' 
-      ? this.listaPromptsFiltrada.length 
-      : this.listaCenariosFiltrada.length;
+    let totalRegistros = 0;
+    
+    if (tipoAtivo === 'prompts') totalRegistros = this.listaPromptsFiltrada.length;
+    else if (tipoAtivo === 'documentation') totalRegistros = this.listaMateriaisFiltrada.length;
+    else totalRegistros = this.listaCenariosFiltrada.length;
       
     return Math.ceil(totalRegistros / this.itensPorPagina) || 1;
+  }
+
+  get listaDocumentosFiltrada(): Documento[] {
+    return this.listaDocumentos.filter(doc => {
+      const meta = this.getParsedMeta(doc);
+
+      const topico = meta.topico || '';
+      const fonte = meta.fonte || '';
+      const nivel = meta.nivel_material || '';
+
+      const busca = this.filtroTopico.toLowerCase();
+      
+      const correspondeTopico = topico.toLowerCase().includes(busca) || 
+                              fonte.toLowerCase().includes(busca);
+                              
+      const correspondeNivel = this.filtroNivel === '' || nivel === this.filtroNivel;
+
+      return correspondeTopico && correspondeNivel;
+    });
+  }
+ 
+  getMeta(doc: Documento) {
+    if (typeof doc.metadata === 'string') {
+      try { return JSON.parse(doc.metadata); } catch { return {}; }
+    }
+    return doc.metadata;
+  }
+
+  getParsedMeta(doc: Documento): MetadataObj {
+    if (!doc.metadata) return {};
+
+    if (typeof doc.metadata === 'string') {
+      try {
+        return JSON.parse(doc.metadata) as MetadataObj;
+      } catch (e) {
+        return {};
+      }
+    }
+    
+    return doc.metadata as MetadataObj;
+  }
+
+  get listaDocumentosPaginada(): Documento[] {
+    const inicio = (this.paginaAtual - 1) * this.itensPorPagina;
+    const fim = inicio + this.itensPorPagina;
+    return this.listaDocumentosFiltrada.slice(inicio, fim);
+  }
+
+  visualizarChunk(doc: Documento): void {
+    this.chunkSelecionado = doc;
+    this.showChunkModal = true;
+  }
+  
+  abrirModalDelecaoChunk(doc: Documento): void {
+      const meta = this.getParsedMeta(doc);
+      const fonte = meta.fonte || '';
+
+    if (confirm(`Deseja excluir este fragmento da fonte: ${fonte}?`)) {
+       console.log('Deletando chunk ID:', doc.id);
+    }
   }
 
   onFiltroChange(): void {
@@ -330,4 +416,55 @@ export class Gerenciamento implements OnInit {
     this.filtroNivel = '';
     this.paginaAtual = 1;
   }
+
+  get listaMateriaisFiltrada(): DocumentoExibicao[] {
+    return this.listaMateriais.filter(mat => {
+      const topico = mat.topico || '';
+      const fonte = mat.fonte || '';
+      const nivel = mat.nivel || '';
+
+      const busca = this.filtroTopico.toLowerCase();
+      
+      const correspondeTopico = topico.toLowerCase().includes(busca) || 
+                                fonte.toLowerCase().includes(busca);                   
+      const correspondeNivel = this.filtroNivel === '' || nivel.toUpperCase() === this.filtroNivel.toUpperCase();
+
+      return correspondeTopico && correspondeNivel;
+    });
+  }
+
+  get listaMateriaisPaginada(): DocumentoExibicao[] {
+    const inicio = (this.paginaAtual - 1) * this.itensPorPagina;
+    const fim = inicio + this.itensPorPagina;
+    return this.listaMateriaisFiltrada.slice(inicio, fim);
+  }
+
+  baixarPDF(idBinario: string, nomeArquivo: string): void {
+    console.log(`Iniciando download do arquivo: ${nomeArquivo}...`);
+    
+    this.gerenciamentoService.baixarMaterialBinario(idBinario).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        
+        const linkHTML = document.createElement('a');
+        linkHTML.href = url;
+        
+        linkHTML.download = nomeArquivo; 
+        
+        document.body.appendChild(linkHTML);
+        linkHTML.click();
+        document.body.removeChild(linkHTML);
+        
+        window.URL.revokeObjectURL(url);
+      },
+      error: (error) => {
+        console.error('Erro ao fazer o download do PDF:', error);
+        alert('Não foi possível baixar o arquivo. Ele pode estar indisponível no servidor.');
+      }
+    });
+  }
+
+
+
+
 }

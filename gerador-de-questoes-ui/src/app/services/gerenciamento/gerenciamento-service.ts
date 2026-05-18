@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { Cenario } from '../../models/cenario.model';
 import { GerenciamentoRequest } from '../../models/gerenciamento-request.model';
 import { Prompt } from '../../models/prompt.model';
+import { Documento } from '../../models/documento.model';
+import { DocumentoExibicao } from '../../models/documento-exibicao.model';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +13,11 @@ import { Prompt } from '../../models/prompt.model';
 export class GerenciamentoService {
 
   private readonly API_URL = 'http://187.77.240.149:82/api/gerenciamento';
+  private readonly API_URL_2 = 'http://localhost:8080/api/gerenciamento/listar/documentos';
+  private readonly API_URL_3 = 'http://localhost:8080/api/gerenciamento/listar/documentos/filtrados';
+  private readonly API_URL_4 = 'http://localhost:8080/api/documentacao/download';
+
+
 
   constructor(private http: HttpClient) {}
   
@@ -49,6 +56,21 @@ export class GerenciamentoService {
     return this.http.put<Prompt>(`${this.API_URL}/atualizar/prompt/${prompt.id}`, prompt);
   }
 
+  /* ####### AÇÕES CRUD PARA A DOCUMENTAÇÃO ####### */
+  listarDocumentos(): Observable<Documento[]>{
+   return this.http.get<Documento[]>(`${this.API_URL_2}`);
+  }
+
+  listarDocumentosFiltrados(): Observable<DocumentoExibicao[]>{
+   return this.http.get<DocumentoExibicao[]>(`${this.API_URL_3}`);
+  }
+
+  baixarMaterialBinario(idBinario: string): Observable<Blob> {
+    const urlDownload = `http://localhost:8080/api/documentacao/download/${idBinario}`; 
+    return this.http.get(urlDownload, { 
+      responseType: 'blob' 
+    });
+  }
 
 
 }

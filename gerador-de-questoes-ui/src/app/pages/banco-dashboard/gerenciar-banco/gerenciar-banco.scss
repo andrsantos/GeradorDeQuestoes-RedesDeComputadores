@@ -356,20 +356,31 @@ button:hover {
 .search-container {
   position: relative;
   flex: 1; 
-  min-width: 250px;
+  min-width: 200px;
   
   .search-input {
-    width: 80%;
+    width: 100%;
     padding: 10px 15px 10px 40px;
     border: 1px solid #ddd;
     border-radius: 20px;
     outline: none;
-    transition: border-color 0.3s;
+    transition: all 0.3s;
+    box-sizing: border-box;
 
     &:focus {
       border-color: #007bff;
       box-shadow: 0 0 5px rgba(0,123,255,0.2);
     }
+  }
+
+  @media (max-width: 768px) {
+  .controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters-group {
+    justify-content: space-between;
+  }
   }
 
   .search-icon {
@@ -380,3 +391,46 @@ button:hover {
     color: #888;
   }
 }
+
+.date-input {
+  padding: 7px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  outline: none;
+  font-family: inherit;
+  color: #374151;
+  background-color: white;
+  cursor: pointer;
+
+  &:focus {
+    border-color: #2563eb;
+  }
+}
+
+.btn-limpar {
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: transform 0.2s, background 0.2s;
+
+  &:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+  }
+}
+
+.filters-group {
+  display: flex;
+  gap: 12px; 
+  align-items: center;
+}
+
+

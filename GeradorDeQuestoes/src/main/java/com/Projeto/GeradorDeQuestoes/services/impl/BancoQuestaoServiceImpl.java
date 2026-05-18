@@ -28,7 +28,7 @@ public class BancoQuestaoServiceImpl implements BancoQuestaoService {
     public List<QuestaoDTO> listarQuestoes() {
         return bancoQuestaoRepository.findAll().stream()
                 .map(entity -> new QuestaoDTO(
-                       entity.getId(),
+                       entity.getId().toString(),
                         entity.getEnunciado(),
                         entity.getAlternativas(),
                         entity.getRespostaCorreta(),
@@ -44,7 +44,7 @@ public class BancoQuestaoServiceImpl implements BancoQuestaoService {
     public List<QuestaoDTO> listarQuestoesPorTopico(String topico) {
         return bancoQuestaoRepository.findByTopico(topico).stream()
                 .map(entity -> new QuestaoDTO(
-                    entity.getId(),
+                    entity.getId().toString(),
                         entity.getEnunciado(),
                         entity.getAlternativas(),
                         entity.getRespostaCorreta(),
@@ -60,7 +60,7 @@ public class BancoQuestaoServiceImpl implements BancoQuestaoService {
     public List<QuestaoDTO> listarQuestoesPorNivel(String nivel) {
         return bancoQuestaoRepository.findByNivel(nivel).stream()
                      .map(entity -> new QuestaoDTO(
-                        entity.getId(),
+                        entity.getId().toString(),
                         entity.getEnunciado(),
                         entity.getAlternativas(),
                         entity.getRespostaCorreta(),

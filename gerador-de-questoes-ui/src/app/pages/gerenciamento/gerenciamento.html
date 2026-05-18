@@ -154,6 +154,98 @@
         <button (click)="mudarPagina(true)" [disabled]="paginaAtual === totalPaginas">Próxima</button>
       </div>
     </div>
+
+    <!-- Tabela de Documentação (Vector Store) -->
+    <div *ngIf="managementForm.get('tableType')?.value === 'documentation'">
+      <div class="filters-container">
+        <div class="filter-group">
+          <label>Filtrar Tópico/Fonte:</label>
+          <input type="text" [(ngModel)]="filtroTopico" (input)="onFiltroChange()" placeholder="Ex: TCP, Kurose...">
+        </div>
+        <div class="filter-group">
+          <label>Nível:</label>
+          <select [(ngModel)]="filtroNivel" (change)="onFiltroChange()">
+            <option value="">Todos</option>
+            <option value="UNIVERSITARIO_INICIANTE">Iniciante</option>
+            <option value="UNIVERSITARIO_INTERMEDIARIO">Médio</option>
+            <option value="UNIVERSITARIO_AVANCADO">Avançado</option>
+          </select>
+        </div>
+        <button type="button" class="btn-clear" (click)="limparFiltros()">Limpar</button>
+      </div>
+
+      <div class="table-header-actions">
+        <span>Materiais na Base: <strong>{{ listaMateriaisFiltrada.length }}</strong></span>
+        <span class="info-label"><i class="fas fa-book"></i> Biblioteca de Arquivos</span>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Tópico</th>
+            <th>Fonte</th>
+            <th>Nível</th>
+            <th>Material de Referência</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let mat of listaMateriaisPaginada">
+            <td class="font-weight-bold">{{ mat.topico }}</td>
+            <td><small>{{ mat.fonte }}</small></td>
+            <td>
+              <!-- Pega apenas o "INTERMEDIARIO" da string "UNIVERSITARIO_INTERMEDIARIO" -->
+              <span class="badge" [ngClass]="mat.nivel.toLowerCase()">
+                {{ mat.nivel.includes('_') ? mat.nivel.split('_')[1] : mat.nivel }}
+              </span>
+            </td>
+            <td class="text-left">
+              <i class="fas fa-file-pdf" style="color: #e74c3c; margin-right: 5px;"></i> 
+              {{ mat.materialReferencia }}
+            </td>
+            <td class="actions-cell">
+              <button class="btn-edit-small" (click)="baixarPDF(mat.idBinario, mat.materialReferencia)" title="Baixar Arquivo">
+                <i class="fas fa-download"></i>
+              </button> 
+              <button class="btn-delete-small" title="Excluir Vínculo">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Controles de paginação -->
+      <div class="pagination-controls">
+        <button (click)="mudarPagina(false)" [disabled]="paginaAtual === 1">Anterior</button>
+        <span>Página <strong>{{ paginaAtual }}</strong> de {{ totalPaginas }}</span>
+        <button (click)="mudarPagina(true)" [disabled]="paginaAtual === totalPaginas">Próxima</button>
+      </div>
+    </div>
+
+    <!-- Modal de Visualização de Chunk -->
+    <div class="modal-overlay" *ngIf="showChunkModal && chunkSelecionado" (click)="showChunkModal = false">
+      <div class="modal-content prompt-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Detalhes do Fragmento (RAG)</h3>
+          <button class="btn-close" (click)="showChunkModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="chunk-meta-info">
+            <!-- Aqui usamos getParsedMeta(chunkSelecionado) para resolver o erro TS2532 -->
+            <p><strong>Tópico:</strong> {{ getParsedMeta(chunkSelecionado).topico || 'Não informado' }}</p>
+            <p><strong>Fonte:</strong> {{ getParsedMeta(chunkSelecionado).fonte || 'Não informada' }}</p>
+            <p><strong>Arquivo Original:</strong> {{ getParsedMeta(chunkSelecionado).source || 'Desconhecido' }}</p>
+          </div>
+          <div class="prompt-text">
+            {{ chunkSelecionado.conteudo }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="showChunkModal = false">Fechar</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal de Inserção de Cenário -->

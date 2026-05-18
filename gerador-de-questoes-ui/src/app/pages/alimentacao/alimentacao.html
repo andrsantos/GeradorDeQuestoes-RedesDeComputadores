@@ -1,88 +1,181 @@
 <div class="container">
-  <h1>Alimentação do RAG (Contexto)</h1>
-  <p class="subtitle">Faça o upload de arquivos PDF (capítulos de livros, artigos, etc.) para ensinar o sistema.</p>
+  <h1>Alimentação do Sistema</h1>
+  <p class="subtitle">Escolha como deseja enriquecer a base de conhecimento do Elaborar.</p>
 
-  <!-- Seção de Upload -->
-  <div class="upload-section">
+  <div class="menu-grid">
     
-    <!-- 1. O Dropzone (se nenhum arquivo foi selecionado) -->
-    <div 
-      class="dropzone"
-      *ngIf="!arquivo"
-      (dragover)="onDragOver($event)"
-      (dragleave)="onDragLeave($event)"
-      (drop)="onDrop($event)"
-      [class.drag-over]="isHovering"
-    >
-      <input 
-        type="file" 
-        id="fileInput" 
-        (change)="onFileSelected($event)" 
-        accept=".pdf" 
-        hidden
-      >
-      <!-- Ícone SVG de Upload (do Dashboard) -->
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--cor-primaria)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-      
-      <p>Arraste e solte um arquivo PDF aqui</p>
-      <p>ou</p>
-      <label for="fileInput" class="btn-selecionar">
-        Selecione um arquivo
-      </label>
-    </div>
-
-    <!-- 2. O Arquivo Selecionado (se um arquivo foi selecionado) -->
-    <div class="arquivo-selecionado" *ngIf="arquivo">
-      <h3>Arquivo Pronto para Upload</h3>
-      
-      <!-- Detalhes do arquivo -->
-      <div class="arquivo-info">
-        <span>{{ arquivo.name }}</span>
-        <span class="arquivo-tamanho">
-          ({{ (arquivo.size / 1024 / 1024) | number:'1.1-2' }} MB)
-        </span>
-        <button (click)="removerArquivo()" class="btn-remover">
-          &times; <!-- Símbolo de "X" -->
-        </button>
-      </div>
-
-      <!-- Campo Tópico -->
-      <div class="form-group">
-        <label for="topico">Associar ao Tópico:</label>
-        <input 
-          id="topico" 
-          [(ngModel)]="topico"
-          placeholder="Ex: Modelo OSI, TCP/IP"
-          [disabled]="uploadProgress !== null"
-        >
-      </div>
-
-      <!-- Barra de Progresso e Botão de Upload -->
-      <div class="progresso-container" *ngIf="uploadProgress === null && !isProcessing">
-        <button (click)="iniciarUpload()" class="btn-upload">
-          Iniciar Processamento
-        </button>
-      </div>
-
-      <!-- Feedback de Progresso/Processamento -->
-      <div *ngIf="uploadProgress !== null">
-        <!-- Barra de Progresso -->
-        <div class="barra-progresso">
-          <div 
-            class="barra-progresso-interna" 
-            [style.width.%]="uploadProgress">
-          </div>
+    <!-- CARD 1: ALIMENTAR CONTEXTO (RAG) -->
+    <div class="menu-card">
+      <div class="card-header">
+        <div class="icon-circle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
         </div>
-        <span class="progresso-texto">
-          {{ uploadProgress }}%
-        </span>
+        <h2>Alimentar Contexto</h2>
+        <p>Suba livros, artigos ou apostilas para o RAG.</p>
       </div>
 
-      <div *ngIf="isProcessing" class="processando-texto">
-        <span class="loader-small"></span>
-        Processando o arquivo no servidor... (Isso pode levar alguns segundos)
-      </div>
+      <div class="upload-section">
+        <!-- Dropzone exclusivo para Contexto -->
+        <div class="dropzone" *ngIf="!arquivoContexto" 
+             (drop)="onDrop($event, 'contexto')" 
+             (dragover)="onDragOver($event)" 
+             [class.drag-over]="isHovering">
+           <p>Arraste PDF de Contexto</p>
+           <label for="fileContexto" class="btn-selecionar">Selecionar Livro/Artigo</label>
+           <input type="file" id="fileContexto" (change)="onFileSelected($event, 'contexto')" accept=".pdf" hidden>
+        </div>
 
+        <!-- Feedback exclusivo para Contexto -->
+        <div class="arquivo-selecionado" *ngIf="arquivoContexto">
+          <div class="arquivo-info">
+            <span>{{ arquivoContexto.name }}</span>
+            <button (click)="removerArquivo('contexto')" class="btn-remover">&times;</button>
+          </div>
+          
+          <div class="form-group">
+            <label>Tópico de Contexto:</label>
+            <input [(ngModel)]="topico" placeholder="Ex: Redes de Computadores">
+          </div>
+
+          <div class="form-group">
+            <label>Nível de Dificuldade:</label>
+            <select [(ngModel)]="nivelSelecionado" class="form-control-select">
+              <option value="UNIVERSITARIO_INICIANTE">Universitário Iniciante</option>
+              <option value="UNIVERSITARIO_INTERMEDIARIO">Universitário Intermediário</option>
+              <option value="UNIVERSITARIO_AVANCADO">Universitário Avançado</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Fonte:</label>
+            <input [(ngModel)]="fonteContexto" placeholder="Ex: Livro do Tanenbaum, Documento Institucional...">
+          </div>
+
+          <button (click)="iniciarUpload('contexto')" class="btn-upload" [disabled]="isProcessingRag">
+            <span *ngIf="!isProcessingRag">Alimentar RAG</span>
+            <div *ngIf="isProcessingRag" class="loader-container">
+              <span class="loader-small"></span>
+              <span>Processando...</span>
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
+
+    <!-- CARD 2: EXTRAIR QUESTÕES -->
+    <div class="menu-card">
+      <div class="card-header">
+        <div class="icon-circle primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+        </div>
+        <h2>Extrair Questões</h2>
+        <p>Suba PDFs de provas para popular o banco de questões.</p>
+      </div>
+
+      <div class="upload-section">
+        <!-- Dropzone exclusivo para Questões -->
+        <div class="dropzone" *ngIf="!arquivoQuestoes" 
+             (drop)="onDrop($event, 'questoes')" 
+             (dragover)="onDragOver($event)">
+           <p>Arraste PDF de Provas/Exercícios</p>
+           <label for="fileQuestoes" class="btn-selecionar">Selecionar PDF de Provas</label>
+           <input type="file" id="fileQuestoes" (change)="onFileSelected($event, 'questoes')" accept=".pdf" hidden>
+        </div>
+
+        <!-- Feedback exclusivo para Questões -->
+        <div class="arquivo-selecionado" *ngIf="arquivoQuestoes">
+          <div class="arquivo-info">
+            <span>{{ arquivoQuestoes.name }}</span>
+            <button (click)="removerArquivo('questoes')" class="btn-remover">&times;</button>
+          </div>
+          <button (click)="iniciarUpload('questoes')" class="btn-upload" [disabled]="isProcessing">
+            <span *ngIf="!isProcessing">Processar e Revisar Questões</span>
+            <div *ngIf="isProcessing" class="loader-container">
+              <span class="loader-small"></span>
+              <span>Analisando PDF...</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE REVISÃO -->
+<div class="modal-backdrop" *ngIf="modalQuestoesAberta"></div>
+
+<div class="modal modal-xl" *ngIf="modalQuestoesAberta">
+  <div class="modal-header sticky-header">
+    <div class="header-info">
+      <h2>Revisão de Questões Extraídas</h2>
+      <span class="file-badge" (click)="downloadPdfOriginal()">
+        📄 {{ arquivoQuestoes?.name }} (Download Original)
+      </span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-text" (click)="marcarTodas()">Marcar Todas</button>
+      <button class="btn-text" (click)="desmarcarTodas()">Desmarcar Todas</button>
+      <button class="btn-fechar" (click)="modalQuestoesAberta = false">✖</button>
+    </div>
+  </div>
+
+  <div class="modal-body">
+    <div class="card-revisao" *ngFor="let par of questoesExtraidas; let i = index" [class.desativado]="!questoesAprovadas.has(i)">
+      
+      <div class="check-container">
+        <input type="checkbox" [checked]="questoesAprovadas.has(i)" (change)="toggleAprovacao(i)">
+      </div>
+
+      <div class="conteudo-questoes">
+        <!-- BLOCO ORIGINAL -->
+        <div class="bloco-questao original">
+          <span class="label-tipo">Questão Original Extraída</span>
+          <div class="campo-editavel">
+            <h4 *ngIf="!isEditando(i, 'enunciado', true)">{{ par.enunciado }}</h4>
+            <button class="btn-icon-edit" (click)="ativarEdicao(i, 'enunciado', true)" *ngIf="!isEditando(i, 'enunciado', true)">✎</button>
+            <div *ngIf="isEditando(i, 'enunciado', true)" class="edit-box">
+              <textarea [(ngModel)]="par.enunciado" rows="3" class="form-control-inline"></textarea>
+              <button class="btn-save-inline" (click)="salvarEdicao()">OK</button>
+            </div>
+          </div>
+
+          <ul class="alternativas-revisao">
+            <li *ngFor="let alt of ['A','B','C','D','E']">
+              <strong>{{ alt }}):</strong> {{ par.alternativas[alt] }}
+            </li>
+          </ul>
+          <p><strong>Gabarito:</strong> {{ par.respostaCorreta }}</p>
+        </div>
+
+        <div class="divisor-seta">⬇️ Questão Sugerida pela IA ⬇️</div>
+
+        <!-- BLOCO INSPIRADA -->
+        <div class="bloco-questao inspirada" *ngIf="par.questaoInspirada">
+          <span class="label-tipo">Sugestão Elaborada pela IA</span>
+          <div class="campo-editavel">
+            <h4 *ngIf="!isEditando(i, 'enunciado', false)">{{ par.questaoInspirada.enunciado }}</h4>
+            <button class="btn-icon-edit" (click)="ativarEdicao(i, 'enunciado', false)" *ngIf="!isEditando(i, 'enunciado', false)">✎</button>
+            <div *ngIf="isEditando(i, 'enunciado', false)" class="edit-box">
+              <textarea [(ngModel)]="par.questaoInspirada.enunciado" rows="3" class="form-control-inline"></textarea>
+              <button class="btn-save-inline" (click)="salvarEdicao()">OK</button>
+            </div>
+          </div>
+
+          <ul class="alternativas-revisao">
+            <li *ngFor="let alt of ['A','B','C','D','E']">
+              <strong>{{ alt }}):</strong> {{ par.questaoInspirada.alternativas[alt] }}
+            </li>
+          </ul>
+          <p><strong>Gabarito Sugerido:</strong> {{ par.questaoInspirada.respostaCorreta }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn-cancelar" (click)="modalQuestoesAberta = false">Cancelar</button>
+    <button class="btn-finalizar-batch" (click)="confirmarESalvarNoBanco()">
+      Confirmar e Salvar {{ questoesAprovadas.size }} Blocos no Banco
+    </button>
   </div>
 </div>

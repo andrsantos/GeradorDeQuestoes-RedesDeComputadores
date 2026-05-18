@@ -243,3 +243,40 @@
   from { transform: translateY(-30px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+
+.content-truncate {
+  max-width: 400px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #666;
+  font-style: italic;
+}
+
+.chunk-meta-info {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f1f3f5;
+  border-radius: 4px;
+  p { margin: 5px 0; font-size: 0.9rem; }
+}
+
+/* Badges específicas para o nível do material do RAG */
+.badge {
+  &.universitario_avancado { background-color: #6f42c1; } /* Roxo */
+  &.universitario_intermediario { background-color: #007bff; } /* Azul */
+  &.universitario_iniciante { background-color: #17a2b8; } /* Ciano */
+}
+
+.info-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.font-weight-bold {
+  font-weight: 700;
+}

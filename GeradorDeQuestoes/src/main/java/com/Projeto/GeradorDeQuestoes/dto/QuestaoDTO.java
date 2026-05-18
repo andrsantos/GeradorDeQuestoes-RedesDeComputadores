@@ -1,15 +1,20 @@
 package com.Projeto.GeradorDeQuestoes.dto;
 
 import java.util.Map;
-import java.util.UUID;
 
 import com.Projeto.GeradorDeQuestoes.enums.NivelTecnico;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties(ignoreUnknown = true) 
 public class QuestaoDTO {
     
-    UUID id;
+    String id;
+    @JsonAlias({"enunciado", "question", "statement", "texto"})
     String enunciado;
+    @JsonAlias({"alternativas", "options", "choices"})
     Map<String, String> alternativas; 
+    @JsonAlias({"gabarito", "answer", "resposta", "correct_answer"})   
     String respostaCorreta;
     String explicacao;
     String conceito;
@@ -17,6 +22,10 @@ public class QuestaoDTO {
     String comentarioTecnico;
     String topico;
     NivelTecnico nivel;
+    private QuestaoDTO questaoInspirada;
+
+    public QuestaoDTO() {
+    }
 
     public QuestaoDTO(String enunciado, Map<String,String> alternativas, String respostaCorreta, String explicacao, String conceito, String competencia, String comentarioTecnico) {
         this.enunciado = enunciado;
@@ -28,7 +37,7 @@ public class QuestaoDTO {
         this.comentarioTecnico = comentarioTecnico;
     }
 
-        public QuestaoDTO(UUID id, String enunciado, Map<String,String> alternativas, String respostaCorreta, 
+        public QuestaoDTO(String id, String enunciado, Map<String,String> alternativas, String respostaCorreta, 
         String conceito, String competencia, String comentarioTecnico, NivelTecnico nivel) {
         this.id = id;
         this.enunciado = enunciado;
@@ -114,13 +123,22 @@ public class QuestaoDTO {
         this.nivel = nivel;
     }
 
-    public UUID getId() {
+    public String getId() {
         return this.id;
     }
 
-    public void setId(UUID id) {
+    public void setId(String id) {
         this.id = id;
     }
+
+    public QuestaoDTO getQuestaoInspirada() {
+        return this.questaoInspirada;
+    }
+
+    public void setQuestaoInspirada(QuestaoDTO questaoInspirada) {
+        this.questaoInspirada = questaoInspirada;
+    }
+
 
 
 

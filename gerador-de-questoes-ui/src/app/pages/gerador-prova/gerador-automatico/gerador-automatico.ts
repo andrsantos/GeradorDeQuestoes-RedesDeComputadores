@@ -98,12 +98,6 @@ export class GeradorAutomatico implements OnInit {
     }
     return this.topicosSelecionados.map(t => t.topico).join(', ');
   }
-  
-  // onRemoverTopico(topicoParaRemover: string): void {
-  //   this.topicosSelecionados = this.topicosSelecionados.filter(
-  //     t => t.topico !== topicoParaRemover
-  //   );
-  // }
 
   onCriarProva() {
 
@@ -151,22 +145,6 @@ export class GeradorAutomatico implements OnInit {
     });
 
   }
-
-  // onAdicionarQuestoes() {
-  //     if (!this.provaId) return;
-  //     this.isLoadingAdicionar = true; 
-
-  //     const request: GerarQuestaoRequest = {
-  //       topico: this.topico,
-  //       quantidade: this.quantidade
-  //     };
-
-  //     this.prova$ = this.provaService.adicionarQuestoes(this.provaId, request);
-  //     this.prova$.subscribe({
-  //       next: () => this.isLoadingAdicionar = false, 
-  //       error: () => this.isLoadingAdicionar = false 
-  //     });
-  //   }
 
   onDescartarQuestao(indice: number) {
         if (!this.provaId) return;
@@ -286,6 +264,8 @@ export class GeradorAutomatico implements OnInit {
     nivel: "UNIVERSITARIO_INTERMEDIARIO",
 
     dataCriacao: new Date().toISOString().split('.')[0],
+
+    origem: "GERADO_POR_IA"
 
   };
 

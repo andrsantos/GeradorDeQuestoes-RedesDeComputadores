@@ -32,5 +32,7 @@ export interface BancoQuestao {
   dataCriacao?: string;
 
   nivel?: NivelTecnico;
+
+  origem?: string;
   
 }

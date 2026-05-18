@@ -7,6 +7,8 @@ import { ToastrService } from 'ngx-toastr';
 import { BancoQuestoesService } from '../../services/banco-questoes/banco-questoes';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {QuestaoFormatoAvaliarDTO } from '../../models/questao-formato-avaliar.model';
+import { IntegracaoAvaliarService } from '../../services/integracao-avaliar/integracao-avaliar';
 
 export type CampoEdicao = 'enunciado' | 'resposta' | 'a' | 'b' | 'c' | 'd' | 'e';
 
@@ -37,6 +39,8 @@ export class ProvaBuilder implements OnInit {
   modalAberta = false;
   questaoSelecionada: any = null;
   isLoadingFinalizar = false;
+  provaFormatoAvaliar: QuestaoFormatoAvaliarDTO[] = [];
+  formatoAvaliarResultado: string = '';
 
 
 
@@ -44,7 +48,8 @@ export class ProvaBuilder implements OnInit {
  
 
   constructor(private provaService: ProvaService, private toastr: ToastrService,
-    private bancoQuestoesService: BancoQuestoesService
+    private bancoQuestoesService: BancoQuestoesService,
+    private integracaoAvaliarService: IntegracaoAvaliarService
   ) { }
   
 
@@ -152,7 +157,48 @@ export class ProvaBuilder implements OnInit {
     this.prova$.forEach(prova => {
           console.log("Prova gerada com questões do banco", prova.questoes);
     });
+
+
+    console.log("Prova$ após chamada de geração de prova a partir do banco:", this.prova$);
   
+
+  }
+
+  exportarFormatoAvaliar(){
+    
+    this.provaFormatoAvaliar = [];
+    let numero = 1;
+    this.prova$?.forEach(questao => {
+      questao.questoes.forEach(q => {
+        const formatoAvaliar = {
+          numeroQuestao: numero++,
+          enunciado: q.enunciado,
+          alternativas: q.alternativas,
+          respostaCorreta: q.respostaCorreta
+        };
+        this.provaFormatoAvaliar.push(formatoAvaliar);
+      });
+    });
+
+    console.log("Prova no formato avaliar:", this.provaFormatoAvaliar);
+
+      this.integracaoAvaliarService.exportarFormatoAvaliar(this.provaFormatoAvaliar).subscribe({
+      next: (data: string) => {
+        this.formatoAvaliarResultado = data;
+        console.log( "Resultado da exportação para avaliação:", this.formatoAvaliarResultado);
+        this.toastr.success("Prova exportada para avaliação com sucesso!", 'Sucesso!');
+
+      if (data && data.trim().length > 0) {
+      this.baixarArquivoTxt(data);
+      } else {
+      this.toastr.warning("O servidor retornou uma prova vazia.", "Aviso");
+      }
+      },
+      error: (err: any) => {
+        console.error("Erro ao exportar prova para avaliação:", err);
+        this.toastr.error("Falha ao exportar prova para avaliação.", 'Erro');
+      }
+    });
 
   }
 
@@ -223,6 +269,25 @@ export class ProvaBuilder implements OnInit {
       }
     });
   }
+
+  private baixarArquivoTxt(conteudo: string) {
+
+  const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+  
+  const url = window.URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  
+  const data = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+  link.download = `prova-avaliacao-${data}.txt`;
+  
+  link.click();
+  window.URL.revokeObjectURL(url);
+
+}
+
+
 
   
 

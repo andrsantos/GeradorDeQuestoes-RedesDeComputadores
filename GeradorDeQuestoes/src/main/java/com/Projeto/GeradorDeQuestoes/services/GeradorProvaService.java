@@ -13,7 +13,10 @@ import com.Projeto.GeradorDeQuestoes.repositories.TopicoConfigRepository;
 import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,6 +142,39 @@ public class GeradorProvaService {
             tp.getQuantidadeDificeis(), tp.getQuantidadeMedias(), tp.getQuantidadeFaceis());
             
             ListaQuestoes novasQuestoes = questaoService.gerarQuestoes(ragRequest);
+
+
+            novasQuestoes.questoes().forEach(questao -> {
+
+            String letraCorretaOriginal = questao.getRespostaCorreta().toLowerCase();
+            String textoCorreto = questao.getAlternativas().get(letraCorretaOriginal);
+
+            List<String> textos = new ArrayList<>(questao.getAlternativas().values());
+            Collections.shuffle(textos);
+
+            Map<String, String> novasAlternativas = new LinkedHashMap<>();
+            String[] letras = {"a", "b", "c", "d", "e"};
+            String novaLetraCorreta = "";
+
+            for (int i = 0; i < textos.size(); i++) {
+                String letraAtual = letras[i];
+                String textoAtual = textos.get(i);
+                
+                novasAlternativas.put(letraAtual, textoAtual);
+
+                if (textoAtual.equals(textoCorreto)) {
+                    novaLetraCorreta = letraAtual;
+                }
+            }
+
+            questao.setAlternativas(novasAlternativas);
+            questao.setRespostaCorreta(novaLetraCorreta);
+
+            System.out.println("--- Questão Randomizada ---");
+            System.out.println("Nova correta: " + questao.getRespostaCorreta());
+            System.out.println("Novas alternativas: " + questao.getAlternativas());
+ 
+            });
             
             novasQuestoes.questoes().forEach(prova::adicionarQuestao);
             

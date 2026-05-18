@@ -11,6 +11,32 @@ public class VectorStoreEntity {
 
     @Column(name = "metadata", columnDefinition = "jsonb")
     private String metadata; 
+
+    @Column(name = "content", columnDefinition = "text")
+    private String content;
     
     public String getMetadata() { return metadata; }
+
+
+
+    public UUID getId() {
+        return this.id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    public String getContent() {
+        return this.content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    
 }

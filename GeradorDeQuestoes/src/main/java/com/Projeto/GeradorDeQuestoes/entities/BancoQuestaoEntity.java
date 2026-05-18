@@ -53,6 +53,12 @@ public class BancoQuestaoEntity {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime dataCriacao;
 
+    @ManyToOne
+    @JoinColumn(name = "arquivo_id")
+    private PdfQuestaoEntity arquivoOrigem;
+
+
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public String getTopico() { return topico; }
@@ -65,6 +71,7 @@ public class BancoQuestaoEntity {
     public void setAlternativas(Map<String, String> alternativas) { this.alternativas = alternativas; }
     public String getRespostaCorreta() { return respostaCorreta; }
     public void setRespostaCorreta(String respostaCorreta) { this.respostaCorreta = respostaCorreta; }
+
 
     public String getConceito() {
         return this.conceito;
@@ -106,6 +113,19 @@ public class BancoQuestaoEntity {
     public void setNivel(NivelTecnico nivel) {
         this.nivel = nivel;
     }
+
+    
+
+    public PdfQuestaoEntity getArquivoOrigem() {
+        return this.arquivoOrigem;
+    }
+
+    public void setArquivoOrigem(PdfQuestaoEntity arquivoOrigem) {
+        this.arquivoOrigem = arquivoOrigem;
+    }
+
+
+
     
 
 

@@ -30,5 +30,10 @@ export class BancoQuestoesService {
     console.log("Questão a ser cadastrada:", questao);
     return this.http.post(`${this.API_URL}/cadastrar`, questao);
   }
+  cadastrarPdfOrigem(file: File): Observable<any>{
+    const formData: FormData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post(`${this.API_URL}/cadastrar/pdf/upload`, formData);
+  }
 }
   
