@@ -265,7 +265,9 @@ export class GeradorAutomatico implements OnInit {
 
     dataCriacao: new Date().toISOString().split('.')[0],
 
-    origem: "GERADO_POR_IA"
+    origem: "GERADO_POR_IA",
+    
+    arquivoOrigem: undefined
 
   };
 

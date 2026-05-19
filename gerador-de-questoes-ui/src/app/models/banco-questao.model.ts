@@ -34,5 +34,7 @@ export interface BancoQuestao {
   nivel?: NivelTecnico;
 
   origem?: string;
+
+  arquivoOrigem?: string;
   
 }

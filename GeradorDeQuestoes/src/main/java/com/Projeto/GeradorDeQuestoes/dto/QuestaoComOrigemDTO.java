@@ -2,6 +2,7 @@ package com.Projeto.GeradorDeQuestoes.dto;
 
 import java.util.Map;
 
+
 public class QuestaoComOrigemDTO {
     private String topico;
     private String enunciado;
@@ -13,7 +14,9 @@ public class QuestaoComOrigemDTO {
     private String competencia;
     private String nivel;
     private String dataCriacao;
-    private String origem; 
+    private String origem;
+    private String arquivoOrigem;
+
 
     public QuestaoComOrigemDTO(){
         
@@ -41,4 +44,15 @@ public class QuestaoComOrigemDTO {
     public void setDataCriacao(String dataCriacao) { this.dataCriacao = dataCriacao; }
     public String getOrigem() { return origem; }
     public void setOrigem(String origem) { this.origem = origem; }
+
+
+    public String getArquivoOrigem() {
+        return this.arquivoOrigem;
+    }
+
+    public void setArquivoOrigem(String arquivoOrigem) {
+        this.arquivoOrigem = arquivoOrigem;
+    }
+    
+
 }

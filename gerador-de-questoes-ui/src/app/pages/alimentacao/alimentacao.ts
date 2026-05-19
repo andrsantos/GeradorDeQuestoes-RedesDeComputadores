@@ -206,8 +206,8 @@ confirmarESalvarNoBanco() {
     next: (pdfCadastrado) => {
       this.idPdfCadastrado = pdfCadastrado.id;
 
-      questoesParaSalvar.forEach(q => q.origem = this.idPdfCadastrado!);
-
+      questoesParaSalvar.forEach(q => q.arquivoOrigem = this.idPdfCadastrado!);
+      questoesParaSalvar.forEach(q => q.origem = "GERADO_POR_PDF");
       questoesParaSalvar.forEach(q => {
         this.bancoQuestoesService.cadastrarQuestao(q).subscribe();
       });
@@ -241,7 +241,8 @@ confirmarESalvarNoBanco() {
       competencia: q.competencia || "",
       nivel: q.nivel || "UNIVERSITARIO_INTERMEDIARIO",
       dataCriacao: new Date().toISOString().split('.')[0],
-      origem: ""
+      origem: "",
+      arquivoOrigem: q.arquivoId
     };
   }
 

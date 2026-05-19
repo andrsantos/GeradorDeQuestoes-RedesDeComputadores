@@ -98,7 +98,15 @@ public class BancoQuestaoController {
         questao.setTipo(dto.getTipo() != null ? TipoQuestao.valueOf(dto.getTipo()) : TipoQuestao.MULTIPLA_ESCOLHA_5);
         questao.setNivel(dto.getNivel() != null ? NivelTecnico.valueOf(dto.getNivel()) : null);
         if (dto.getDataCriacao() != null) questao.setDataCriacao(LocalDateTime.parse(dto.getDataCriacao()));
-        if (dto.getOrigem() != null) pdfQuestaoRepository.findById(UUID.fromString(dto.getOrigem())).ifPresent(questao::setArquivoOrigem);
+        // if (dto.getOrigem() != null) pdfQuestaoRepository.findById(UUID.fromString(dto.getOrigem())).ifPresent(questao::setArquivoOrigem);
+        if(dto.getOrigem().equals("GERADOR_POR_IA")){
+        questao.setArquivoOrigem(null);
+        }
+        if(dto.getOrigem().equals("GERADO_POR_PDF")){
+        System.out.println("Arquivo  origem" + dto.getArquivoOrigem());
+        questao.setArquivoOrigem(pdfQuestaoRepository.findById(UUID.fromString(dto.getArquivoOrigem()))
+        .orElseThrow(() -> new IllegalArgumentException("Arquivo de origem não encontrado!")));
+        }
 
         return ResponseEntity.ok(repository.save(questao));
 
