@@ -3,6 +3,7 @@ package com.Projeto.GeradorDeQuestoes.services.impl;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import com.Projeto.GeradorDeQuestoes.dto.CenarioConfigDTO;
@@ -195,10 +196,13 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
         )).toList();
     }
 
-    @Override
+@Override
     @Transactional
     public void deletarDocumento(String idBinario) {
-        DocumentosReferenciaEntity documento = documentosReferenciaRepository.findByPdfBinarioId(idBinario)
+        
+        UUID uuidBinario = UUID.fromString(idBinario);
+
+        DocumentosReferenciaEntity documento = documentosReferenciaRepository.findByPdfBinarioId(uuidBinario)
                 .orElseThrow(() -> new EntityNotFoundException("Documento não encontrado com o ID Binário fornecido."));
 
         String fonte = documento.getFonte();

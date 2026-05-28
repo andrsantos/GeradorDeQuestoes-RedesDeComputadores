@@ -10,5 +10,5 @@ import com.Projeto.GeradorDeQuestoes.entities.DocumentosReferenciaEntity;
 
 @Repository
 public interface DocumentosReferenciaRepository extends JpaRepository<DocumentosReferenciaEntity, UUID>{
-    Optional<DocumentosReferenciaEntity> findByPdfBinarioId(String pdfBinarioId);
+        Optional<DocumentosReferenciaEntity> findByPdfBinarioId(UUID pdfBinarioId);
 }
