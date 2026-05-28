@@ -72,5 +72,12 @@ export class GerenciamentoService {
     });
   }
 
+  deletarMaterialBinario(idBinario: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/deletar/documento/${idBinario}`, {
+      responseType: 'text'
+    });
+  }
+
+
 
 }

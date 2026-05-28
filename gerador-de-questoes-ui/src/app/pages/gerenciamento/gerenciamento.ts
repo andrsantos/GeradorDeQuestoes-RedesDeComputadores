@@ -79,7 +79,6 @@ export class Gerenciamento implements OnInit {
       tableType: ['', Validators.required]
     });
     
-    // Formulários de cenário e prompt
     this.editCenarioForm = this.fb.group({
       id: [''],
       topico: ['', [Validators.required, Validators.minLength(5)]],
@@ -96,7 +95,6 @@ export class Gerenciamento implements OnInit {
     this.insertPromptForm = this.fb.group({
       topico: ['', [Validators.required, Validators.minLength(5)]],
       nivel: ['', Validators.required]
-      // instrucoesEspecificas: ['', [Validators.required, Validators.minLength(20)]]
     });
 
   }
@@ -117,7 +115,6 @@ onSearch(): void {
     }
   }
 
-  // Método de Listagem comum para todos os cenários
   listar(): void {
     console.log('Tipo selecionado para listagem:', this.managementForm.value.tableType);
     const request = {
@@ -164,7 +161,6 @@ onSearch(): void {
   }
 
   
-  // --- MÉTODOS DE PROMPT ---
   iniciarEdicaoPrompt(prompt: Prompt): void {
     this.idPromptEditando = prompt.id;
     this.promptTemporario = { ...prompt };
@@ -559,7 +555,26 @@ onSearch(): void {
     }
   }
 
-  
+  excluirMaterial(idBinario: string, nomeMaterial: string): void {
+    if (confirm(`Atenção: Deseja realmente excluir o documento "${nomeMaterial}" e todos os seus fragmentos do banco de dados? Essa ação não pode ser desfeita.`)) {
+      
+      this.gerenciamentoService.deletarMaterialBinario(idBinario).subscribe({
+        next: () => {
+          this.listaMateriais = this.listaMateriais.filter(mat => mat.idBinario !== idBinario);
+          
+          if (this.listaMateriaisPaginada.length === 0 && this.paginaAtual > 1) {
+            this.paginaAtual--;
+          }
+          
+          this.toastr.success('Documento excluído com sucesso!', 'Sucesso');
+        },
+        error: (error) => {
+          console.error('Erro ao excluir o documento:', error);
+          this.toastr.error('Erro ao tentar excluir o documento. Verifique os logs.', 'Erro');
+        }
+      });
+    }
+  }
 
 
 

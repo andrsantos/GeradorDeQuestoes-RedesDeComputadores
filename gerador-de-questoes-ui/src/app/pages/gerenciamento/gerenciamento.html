@@ -214,7 +214,7 @@
                 <button class="btn-edit-small" (click)="baixarPDF(mat.idBinario, mat.materialReferencia)" title="Baixar Arquivo">
                   <i class="fas fa-download"></i>
                 </button> 
-                <button class="btn-delete-small" title="Excluir Vínculo">
+                <button class="btn-delete-small" title="Excluir Vínculo" (click)="excluirMaterial(mat.idBinario, mat.materialReferencia)">
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
