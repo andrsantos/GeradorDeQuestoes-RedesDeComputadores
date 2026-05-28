@@ -5,7 +5,6 @@ import com.Projeto.GeradorDeQuestoes.dto.GerarQuestaoRequest;
 import com.Projeto.GeradorDeQuestoes.dto.ListaQuestoes;
 import com.Projeto.GeradorDeQuestoes.dto.Questao;
 import com.Projeto.GeradorDeQuestoes.dto.TopicoQuantidade;
-import com.Projeto.GeradorDeQuestoes.entities.CenarioConfigEntity;
 import com.Projeto.GeradorDeQuestoes.entities.TopicoConfigEntity;
 import com.Projeto.GeradorDeQuestoes.enums.NivelTecnico;
 import com.Projeto.GeradorDeQuestoes.repositories.CenarioConfigRepository;
@@ -38,6 +37,7 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
     private final VectorStore vectorStore;
     private final TopicoConfigRepository topicoConfigRepository;
     private final CenarioConfigRepository cenarioConfigRepository;
+    
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -49,11 +49,11 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
         this.openAiChatClient = openAiChatClient;
         this.anthropicChatClient = anthropicChatClient;
         this.vectorStore = vectorStore;
-            this.topicoConfigRepository = configRepository;
-            this.cenarioConfigRepository = cenarioConfigRepository;
+        this.topicoConfigRepository = configRepository;
+        this.cenarioConfigRepository = cenarioConfigRepository;
     }
 
-@Override
+    @Override
     public ListaQuestoes gerarQuestoes(GerarQuestaoRequest request) {
         List<Questao> todasAsQuestoes = new ArrayList<>();
 
@@ -63,18 +63,34 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
         }
 
         for (TopicoQuantidade bloco : request.topicos()) {
-            
-            System.out.println("Processando bloco de geração para o assunto: " + bloco.getTopico() + 
-                               " | Subtópicos: " + bloco.getSubtopicos());
+            System.out.println("Processando bloco de geração para o assunto: " + bloco.getTopico());
 
-            if (bloco.getQuantidadeFaceis() > 0) {
-                todasAsQuestoes.addAll(gerarBlocoPorNivel(bloco, "FACIL", bloco.getQuantidadeFaceis()));
-            }
-            if (bloco.getQuantidadeMedias() > 0) {
-                todasAsQuestoes.addAll(gerarBlocoPorNivel(bloco, "MEDIO", bloco.getQuantidadeMedias()));
-            }
-            if (bloco.getQuantidadeDificeis() > 0) {
-                todasAsQuestoes.addAll(gerarBlocoPorNivel(bloco, "DIFICIL", bloco.getQuantidadeDificeis()));
+            boolean buscaGeral = bloco.getSubtopicos() == null || bloco.getSubtopicos().isEmpty();
+
+            if (buscaGeral) {
+                if (bloco.getQuantidadeFaceis() > 0) {
+                    todasAsQuestoes.addAll(gerarQuestoesParaConceito(bloco.getTopico(), "", "FACIL", bloco.getQuantidadeFaceis()));
+                }
+                if (bloco.getQuantidadeMedias() > 0) {
+                    todasAsQuestoes.addAll(gerarQuestoesParaConceito(bloco.getTopico(), "", "MEDIO", bloco.getQuantidadeMedias()));
+                }
+                if (bloco.getQuantidadeDificeis() > 0) {
+                    todasAsQuestoes.addAll(gerarQuestoesParaConceito(bloco.getTopico(), "", "DIFICIL", bloco.getQuantidadeDificeis()));
+                }
+            } else {
+                for (var conceitoDto : bloco.getSubtopicos()) {
+                    String nomeConceito = conceitoDto.getConceito();
+                    
+                    if (conceitoDto.getQuantidadeFaceis() > 0) {
+                        todasAsQuestoes.addAll(gerarQuestoesParaConceito(bloco.getTopico(), nomeConceito, "FACIL", conceitoDto.getQuantidadeFaceis()));
+                    }
+                    if (conceitoDto.getQuantidadeMedias() > 0) {
+                        todasAsQuestoes.addAll(gerarQuestoesParaConceito(bloco.getTopico(), nomeConceito, "MEDIO", conceitoDto.getQuantidadeMedias()));
+                    }
+                    if (conceitoDto.getQuantidadeDificeis() > 0) {
+                        todasAsQuestoes.addAll(gerarQuestoesParaConceito(bloco.getTopico(), nomeConceito, "DIFICIL", conceitoDto.getQuantidadeDificeis()));
+                    }
+                }
             }
         }
 
@@ -82,145 +98,125 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
         return new ListaQuestoes(todasAsQuestoes);
     }
 
-    private List<Questao> gerarBlocoPorNivel(TopicoQuantidade configTopico, String nivel, int quantidadeSolicitada) {
-            List<Questao> blocoFinal = new ArrayList<>();
-            String nomeTopico = configTopico.getTopico();
+    private List<Questao> gerarQuestoesParaConceito(String nomeTopico, String conceito, String nivel, int quantidadeSolicitada) {
+        List<Questao> blocoFinal = new ArrayList<>();
         
-            TopicoConfigEntity config = topicoConfigRepository.findByTopicoAndNivel(nomeTopico, nivel)
-                .or(() -> topicoConfigRepository.findByTopicoAndNivel("Padrao", nivel))
-                .orElseThrow(() -> new EntityNotFoundException(
-                    "Erro Crítico: Não foi encontrado o prompt para o tópico '" + nomeTopico + 
-                    "' e o prompt 'Padrao' também não está cadastrado para o nível " + nivel + "."));
+        TopicoConfigEntity config = topicoConfigRepository.findByTopicoAndNivel(nomeTopico, nivel)
+            .or(() -> topicoConfigRepository.findByTopicoAndNivel("Padrao", nivel))
+            .orElseThrow(() -> new EntityNotFoundException(
+                "Erro Crítico: Não foi encontrado o prompt para o tópico '" + nomeTopico + 
+                "' e o prompt 'Padrao' também não está cadastrado para o nível " + nivel + "."));
 
-            List<String> listaContextos = cenarioConfigRepository.findByTopicoAndNivel(nomeTopico, nivel).stream()
-                    .map(CenarioConfigEntity::getDescricao).collect(Collectors.toList());
-            if (listaContextos.isEmpty()) listaContextos = List.of("Cenário de rede corporativa");
+        String conceitoDeExibicao = (conceito == null || conceito.isBlank()) ? "Geral (" + nomeTopico + ")" : conceito;
 
-            boolean buscaGeral = configTopico.getSubtopicos() == null || configTopico.getSubtopicos().isEmpty();
+        int tentativasMaximas = quantidadeSolicitada * 3;
+        int tentativasAtuais = 0;
+
+        while (blocoFinal.size() < quantidadeSolicitada && tentativasAtuais < tentativasMaximas) {
+            tentativasAtuais++;
             
-            List<String> conceitos = new ArrayList<>();
+            String contextoDoConceito = recuperarContextoDoBanco(nomeTopico, conceito);
 
-            configTopico.getSubtopicos().forEach(subtopico -> {
-                conceitos.add(subtopico.getConceito());
-            });
-
-            List<String> conceitosParaIterar = buscaGeral ? List.of("") : conceitos;
-
-            int tentativaConceito = 0;
-            int maxTentativas = conceitosParaIterar.size() * 2; 
-
-            while (blocoFinal.size() < quantidadeSolicitada && tentativaConceito < maxTentativas) {
-                
-                String conceitoAtual = conceitosParaIterar.get(tentativaConceito % conceitosParaIterar.size());
-                
-                String contextoDoConceito = recuperarContextoDoBanco(nomeTopico, conceitoAtual);
-
-                if (contextoDoConceito.isBlank()) {
-                    tentativaConceito++;
-                    continue;
-                }
-
-                Questao questaoFinal = null;
-                int subTentativas = 0;
-                String questaoRaw = null;
-                
-                String conceitoDeExibicao = buscaGeral ? "Geral (" + nomeTopico + ")" : conceitoAtual;
-
-                while (questaoFinal == null && subTentativas < 3) {
-                    try {
-                        if (questaoRaw == null) {
-                            System.out.println("Gerando questão para conceito: " + conceitoDeExibicao);
-                            questaoRaw = chamarAgenteEscritor(nomeTopico, nivel, contextoDoConceito, config, conceitoDeExibicao);
-                        }
-
-                        List<Questao> listaRascunho = parsearRespostaTags(questaoRaw);
-                        if (listaRascunho.isEmpty()) {
-                            questaoRaw = null; 
-                            subTentativas++;
-                            continue;
-                        }
-
-                        Questao rascunho = listaRascunho.get(0);
-                        
-                        String instrucoesDeEstilo = config.getInstrucoesEspecificas(); 
-                        String questaoContextualizadaRaw = chamarAgenteContextualizador(rascunho, conceitoDeExibicao, instrucoesDeEstilo);
-                        
-                        List<Questao> listaFinal = parsearRespostaTags(questaoContextualizadaRaw);
-                        if (!listaFinal.isEmpty()) {
-                            questaoFinal = listaFinal.get(0);
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Erro na geração [" + conceitoDeExibicao + "]: " + e.getMessage());
-                    }
-                    subTentativas++;
-                }
-
-                if (questaoFinal != null) {
-                    questaoFinal = chamarAgenteJulgador(questaoFinal);
-                    questaoFinal.setConceito(conceitoDeExibicao); 
-                    
-                    AvaliacaoQuestao avaliacao = chamarAgenteAvaliador(questaoFinal);
-                    questaoFinal.setCompetencia(avaliacao.getCompetencia());
-                    questaoFinal.setComentarioTecnico(avaliacao.getComentarioTecnico());
-                    questaoFinal.setTopico(nomeTopico);
-                    questaoFinal.setNivel(converterDeStringParaNivelTecnico(nivel));
-
-                    
-                    blocoFinal.add(questaoFinal);
-                    System.out.println("Progresso: " + blocoFinal.size() + "/" + quantidadeSolicitada);
-                }
-
-                tentativaConceito++;
+            if (contextoDoConceito.isBlank()) {
+                continue; 
             }
-            return blocoFinal;
+
+            Questao questaoFinal = null;
+            int subTentativas = 0;
+            String questaoRaw = null;
+            
+            while (questaoFinal == null && subTentativas < 3) {
+                try {
+                    if (questaoRaw == null) {
+                        System.out.println("Gerando questão para conceito: " + conceitoDeExibicao + " (Nível: " + nivel + ")");
+                        questaoRaw = chamarAgenteEscritor(nomeTopico, nivel, contextoDoConceito, config, conceitoDeExibicao);
+                    }
+
+                    List<Questao> listaRascunho = parsearRespostaTags(questaoRaw);
+                    if (listaRascunho.isEmpty()) {
+                        questaoRaw = null; 
+                        subTentativas++;
+                        continue;
+                    }
+
+                    Questao rascunho = listaRascunho.get(0);
+                    
+                    String instrucoesDeEstilo = config.getInstrucoesEspecificas(); 
+                    String questaoContextualizadaRaw = chamarAgenteContextualizador(rascunho, conceitoDeExibicao, instrucoesDeEstilo);
+                    
+                    List<Questao> listaFinal = parsearRespostaTags(questaoContextualizadaRaw);
+                    if (!listaFinal.isEmpty()) {
+                        questaoFinal = listaFinal.get(0);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Erro na geração [" + conceitoDeExibicao + "]: " + e.getMessage());
+                }
+                subTentativas++;
+            }
+
+            if (questaoFinal != null) {
+                questaoFinal = chamarAgenteJulgador(questaoFinal);
+                questaoFinal.setConceito(conceitoDeExibicao); 
+                
+                AvaliacaoQuestao avaliacao = chamarAgenteAvaliador(questaoFinal);
+                questaoFinal.setCompetencia(avaliacao.getCompetencia());
+                questaoFinal.setComentarioTecnico(avaliacao.getComentarioTecnico());
+                questaoFinal.setTopico(nomeTopico);
+                questaoFinal.setNivel(converterDeStringParaNivelTecnico(nivel));
+
+                blocoFinal.add(questaoFinal);
+                System.out.println("Progresso (" + conceitoDeExibicao + "): " + blocoFinal.size() + "/" + quantidadeSolicitada);
+            }
         }
+        return blocoFinal;
+    }
 
     private NivelTecnico converterDeStringParaNivelTecnico(String nivel){
-     if(nivel.equals("FACIL")){
-      return NivelTecnico.UNIVERSITARIO_INICIANTE;
-     }
-     if(nivel.equals("MEDIO")){
-      return NivelTecnico.UNIVERSITARIO_INTERMEDIARIO;
-     } else {
-      return NivelTecnico.UNIVERSITARIO_AVANCADO;
-     }
+        if(nivel.equals("FACIL")){
+            return NivelTecnico.UNIVERSITARIO_INICIANTE;
+        }
+        if(nivel.equals("MEDIO")){
+            return NivelTecnico.UNIVERSITARIO_INTERMEDIARIO;
+        } else {
+            return NivelTecnico.UNIVERSITARIO_AVANCADO;
+        }
     }
 
     private String recuperarContextoDoBanco(String topico, String conceitoEspecífico) {
-            FilterExpressionBuilder b = new FilterExpressionBuilder();
+        FilterExpressionBuilder b = new FilterExpressionBuilder();
 
-            SearchRequest sr;
-            
-            if (conceitoEspecífico == null || conceitoEspecífico.isBlank()) {
-                sr = SearchRequest.builder()
-                        .query("Questão sobre " + topico)
-                        .filterExpression(b.eq("topico", topico).build())
-                        .topK(5)
-                        .build();
-                System.out.println("Busca Vetorial: ABRANGENTE para tópico [" + topico + "]");
-            } else {
-                sr = SearchRequest.builder()
-                        .query("Explicação sobre " + conceitoEspecífico)
-                        .filterExpression(b.and(
-                            b.eq("topico", topico),
-                            b.in("conceitos", conceitoEspecífico)
-                        ).build())
-                        .topK(3) // Menos chunks, porém absurdamente focados
-                        .build();
-                System.out.println("Busca Vetorial: CIRÚRGICA para conceito [" + conceitoEspecífico + "] em [" + topico + "]");
-            }
-
-            List<Document> documentos = this.vectorStore.similaritySearch(sr);
-
-            if (documentos.isEmpty()) {
-                System.err.println("Aviso: Nenhum contexto encontrado no pgvector para: " + (conceitoEspecífico.isBlank() ? topico : conceitoEspecífico));
-                return "";
-            }
-
-            return documentos.stream()
-                    .map(Document::getText)
-                    .collect(Collectors.joining("\n---\n"));
+        SearchRequest sr;
+        
+        if (conceitoEspecífico == null || conceitoEspecífico.isBlank()) {
+            sr = SearchRequest.builder()
+                    .query("Questão sobre " + topico)
+                    .filterExpression(b.eq("topico", topico).build())
+                    .topK(5)
+                    .build();
+            System.out.println("Busca Vetorial: ABRANGENTE para tópico [" + topico + "]");
+        } else {
+            sr = SearchRequest.builder()
+                    .query("Explicação sobre " + conceitoEspecífico)
+                    .filterExpression(b.and(
+                        b.eq("topico", topico),
+                        b.in("conceitos", conceitoEspecífico)
+                    ).build())
+                    .topK(3) 
+                    .build();
+            System.out.println("Busca Vetorial: CIRÚRGICA para conceito [" + conceitoEspecífico + "] em [" + topico + "]");
         }
+
+        List<Document> documentos = this.vectorStore.similaritySearch(sr);
+
+        if (documentos.isEmpty()) {
+            System.err.println("Aviso: Nenhum contexto encontrado no pgvector para: " + (conceitoEspecífico.isBlank() ? topico : conceitoEspecífico));
+            return "";
+        }
+
+        return documentos.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n---\n"));
+    }
     
     @Override
     public List<String> extrairConceitosUnicos(String contexto, int qtd) {
@@ -416,62 +412,6 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
                 .content();
     }
 
-//    private String chamarAgenteContextualizador(Questao questao, String conceito) {
-//     System.out.println("Contextualizando questão para conceito: " + conceito);
-
-//     String alternativasFormatadas = questao.getAlternativas().entrySet().stream()
-//             .map(e -> "[" + e.getKey().toUpperCase() + "] " + e.getValue())
-//             .collect(Collectors.joining("\n"));
-
-//     String prompt = """
-//         Você é um especialista em elaboração de questões de concurso público na área de redes de computadores.
-
-//         Sua tarefa é reescrever a questão abaixo em formato contextualizado,
-//         no estilo de bancas como FGV, CESPE e FCC.
-
-//         ### QUESTÃO ORIGINAL ###
-//         Enunciado: %s
-//         Alternativas:
-//         %s
-//         Resposta correta: %s
-//         Conceito testado: %s
-
-//         ### REGRAS ###
-//         1. Crie um contexto narrativo realista (empresa, cenário técnico, situação-problema) usando entre 130 e 150 palavras.
-//         2. A pergunta deve fluir naturalmente do contexto — não use "Com base no texto acima".
-//         3. As alternativas NÃO devem ser alteradas — apenas o enunciado muda.
-//         4. O conceito testado deve permanecer exatamente o mesmo.
-//         5. O contexto deve ser técnico e denso, mas compreensível.
-//         6. Termine com uma pergunta direta e objetiva, sem "Qual das alternativas abaixo".
-//         7. Prefira contextos do mundo real: data centers, ISPs, redes corporativas, IoT,
-//            telecomunicações, etc.
-
-//         ### FORMATO DE SAÍDA (siga exatamente, sem texto adicional) ###
-//         [ENUNCIADO]
-//         <narrativa + pergunta>
-//         [/ENUNCIADO]
-//         [A] <alternativa A original>
-//         [B] <alternativa B original>
-//         [C] <alternativa C original>
-//         [D] <alternativa D original>
-//         [E] <alternativa E original>
-//         [RESPOSTA] <letra original>
-//         [EXPLICACAO]
-//         <explicação original>
-//         [/EXPLICACAO]
-//         """.formatted(
-//             questao.getEnunciado(),
-//             alternativasFormatadas,
-//             questao.getRespostaCorreta().toUpperCase(),
-//             conceito
-//         );
-
-//     return this.openAiChatClient.prompt(prompt)
-//             .options(ChatOptions.builder().temperature(0.4).build())
-//             .call()
-//             .content();
-//     }
-
     private Questao chamarAgenteJulgador(Questao questao) {
 
     String alternativasFormatadas = questao.getAlternativas().entrySet().stream()
@@ -602,16 +542,5 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
             } catch (Exception e) {
                 throw new RuntimeException("Erro ao parsear avaliação da questão: " + resposta, e);
             }
-
     }
-
-
-
-
-    // private String recuperarContextoDoBanco(String t, String n) {
-    //     SearchRequest sr = SearchRequest.builder().query(t).topK(6).build();
-    //     return this.vectorStore.similaritySearch(sr).stream().map(Document::getText).collect(Collectors.joining("\n"));
-    // }
-
-
 }
