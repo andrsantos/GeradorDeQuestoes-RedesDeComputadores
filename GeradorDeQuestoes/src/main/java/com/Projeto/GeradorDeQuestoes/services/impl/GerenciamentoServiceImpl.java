@@ -21,6 +21,9 @@ import com.Projeto.GeradorDeQuestoes.repositories.VectorStoreRepository;
 import com.Projeto.GeradorDeQuestoes.dto.DocumentoExibicaoDTO;
 import com.Projeto.GeradorDeQuestoes.services.GerenciamentoService;
 
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
+
 /* TÓPICO, NO CONTEXTO DA APLICAÇÃO, DEVE SER ENTENDIDO COMO PROMPT */
 
 @Service
@@ -190,6 +193,21 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
             ref.getFonte(), 
             ref.getPdfBinario().getNomeOriginal()
         )).toList();
+    }
+
+    @Override
+    @Transactional
+    public void deletarDocumento(String idBinario) {
+        DocumentosReferenciaEntity documento = documentosReferenciaRepository.findByPdfBinarioId(idBinario)
+                .orElseThrow(() -> new EntityNotFoundException("Documento não encontrado com o ID Binário fornecido."));
+
+        String fonte = documento.getFonte();
+
+        if (fonte != null && !fonte.isBlank()) {
+            vectorStoreRepository.deleteByMetadataFonte(fonte);
+        }
+
+        documentosReferenciaRepository.delete(documento);
     }
 
     

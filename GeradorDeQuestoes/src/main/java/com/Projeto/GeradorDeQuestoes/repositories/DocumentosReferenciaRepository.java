@@ -1,5 +1,6 @@
 package com.Projeto.GeradorDeQuestoes.repositories;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,5 +10,5 @@ import com.Projeto.GeradorDeQuestoes.entities.DocumentosReferenciaEntity;
 
 @Repository
 public interface DocumentosReferenciaRepository extends JpaRepository<DocumentosReferenciaEntity, UUID>{
-    
+    Optional<DocumentosReferenciaEntity> findByPdfBinarioId(String pdfBinarioId);
 }

@@ -118,6 +118,19 @@ public class GerenciamentoController {
         }
 }
 
+    @DeleteMapping("/deletar/documento/{id}")
+    public ResponseEntity<?> deletarDocumento(@PathVariable String id) {
+        try {
+            System.out.println("ID recebido para deleção de documento: " + id);
+            gerenciamentoService.deletarDocumento(id);
+            return ResponseEntity.ok().body("Documento deletado com sucesso.");
+        } catch (Exception e) {
+            System.err.println("Erro ao deletar documento: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Erro ao deletar o documento: " + e.getMessage());
+        }
+    }
+
 
 
 }

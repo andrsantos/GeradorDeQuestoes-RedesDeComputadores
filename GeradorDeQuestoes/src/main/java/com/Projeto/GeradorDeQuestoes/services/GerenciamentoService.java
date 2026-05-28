@@ -25,6 +25,8 @@ public interface GerenciamentoService {
    List<DocumentoExibicaoDTO> listarDocumentosParaGerenciamento();
    List<DocumentoExibicaoDTO> listarDocumentosCadastrados();
 
+   void deletarDocumento(String idBinario);
+
 
 
     

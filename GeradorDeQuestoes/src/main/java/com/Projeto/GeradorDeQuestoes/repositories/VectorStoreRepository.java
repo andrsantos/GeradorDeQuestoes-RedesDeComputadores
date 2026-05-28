@@ -2,6 +2,7 @@ package com.Projeto.GeradorDeQuestoes.repositories;
 
 import com.Projeto.GeradorDeQuestoes.entities.VectorStoreEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -21,6 +22,10 @@ public interface VectorStoreRepository extends JpaRepository<VectorStoreEntity, 
                    "WHERE metadata->>'topico' = :topico", 
            nativeQuery = true)
     List<String> findDistinctConceitosByTopico(@Param("topico") String topico);
+
+    @Modifying
+    @Query(value = "DELETE FROM vector_store WHERE metadata->>'fonte' = :fonte", nativeQuery = true)
+    void deleteByMetadataFonte(@Param("fonte") String fonte);
 
     
 }
