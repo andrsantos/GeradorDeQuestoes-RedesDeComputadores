@@ -200,30 +200,24 @@
   .btn-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; }
 }
 
-/* ESTILIZAÇÃO DO FORMULÁRIO DENTRO DA MODAL */
-.modal-form {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+/* --- Elementos de Formulário nas Modais --- */
+.form-group textarea,
+.form-group input:not([type="file"]) {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--cor-primaria);
+  border-radius: 6px;
+  font-family: inherit;
+  margin-top: 5px;
+  box-sizing: border-box; 
+}
 
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    align-items: flex-start;
-    width: 100%;
+.form-group textarea {
+  resize: vertical;
+}
 
-    label { font-weight: 600; font-size: 0.9rem; color: #333; }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      box-sizing: border-box;
-      font-family: inherit;
-    }
-  }
+input[type="file"] {
+  display: none;
 }
 
 .modal-body {
@@ -231,13 +225,13 @@
   .prompt-text { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 5px; white-space: pre-wrap; font-family: monospace; max-height: 60vh; overflow-y: auto; }
 }
 
-.modal-footer {
-  padding: 15px 20px;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
+// .modal-footer {
+//   padding: 15px 20px;
+//   border-top: 1px solid #eee;
+//   display: flex;
+//   justify-content: flex-end;
+//   gap: 10px;
+// }
 
 @keyframes slideInDown {
   from { transform: translateY(-30px); opacity: 0; }
@@ -279,4 +273,70 @@
 
 .font-weight-bold {
   font-weight: 700;
+}
+
+/* --- MODAL (COMPORTAMENTO BASE E VARIAÇÕES) --- */
+.modal-backdrop {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(2px); z-index: 1000;
+}
+
+/* Base que centraliza qualquer modal */
+.modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  z-index: 1001; display: flex; flex-direction: column; max-height: 90vh;
+}
+
+/* Variação para modais mais largas (como a de revisão) */
+.modal.modal-xl {
+  width: 950px; max-width: 95%; 
+}
+
+.sticky-header {
+  padding: 1.5rem; border-bottom: 1px solid var(--cor-borda);
+  background: #f8fafc; border-radius: 12px 12px 0 0;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.header-info h2 { margin: 0; font-size: 1.25rem; color: var(--cor-texto); }
+.file-badge {
+  display: inline-block; margin-top: 5px; font-size: 0.8rem;
+  background: #e2e8f0; padding: 4px 10px; border-radius: 20px;
+  color: var(--cor-primaria); cursor: pointer; font-weight: 600;
+}
+
+.header-actions {
+  display: flex; gap: 1rem; align-items: center;
+  .btn-text { background: none; border: none; color: var(--cor-primaria); cursor: pointer; font-weight: 500; }
+  .btn-fechar { border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; }
+}
+
+.modal-footer {
+  padding: 1.25rem 2rem; border-top: 1px solid var(--cor-borda);
+  display: flex; justify-content: flex-end; gap: 1rem; background: #fff;
+  border-radius: 0 0 12px 12px;
+}
+
+.btn-cancelar { padding: 0.75rem 1.5rem; border: none; background: #e2e8f0; border-radius: 8px; cursor: pointer; }
+.btn-finalizar-batch {
+  padding: 0.75rem 2rem; border: none; background: var(--cor-sucesso);
+  color: white; border-radius: 8px; font-weight: 600; cursor: pointer;
+  &:hover { filter: brightness(1.1); }
+}
+
+.loader-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-bottom-color: transparent; 
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

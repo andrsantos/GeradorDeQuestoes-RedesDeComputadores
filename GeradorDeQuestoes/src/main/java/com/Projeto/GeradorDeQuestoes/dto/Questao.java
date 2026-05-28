@@ -1,11 +1,14 @@
 package com.Projeto.GeradorDeQuestoes.dto;
 import java.util.Map;
+
 import com.Projeto.GeradorDeQuestoes.enums.NivelTecnico;
+
 
 public class Questao
 
 {
-    String id;
+
+    private String id; 
     String enunciado;
     Map<String, String> alternativas; 
     String respostaCorreta;
@@ -16,7 +19,12 @@ public class Questao
     String comentarioTecnico;
     String topico;
     NivelTecnico nivel;
+    
 
+
+    public Questao(){
+        
+    }
 
 
     public Questao(String id, String enunciado, Map<String,String> alternativas, String respostaCorreta, String explicacao    ) {
@@ -49,13 +57,8 @@ public class Questao
         this.explicacao = explicacao;
     }
 
-    public String getId() {
-        return this.id;
-    }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+
 
     public String getEnunciado() {
         return this.enunciado;
@@ -122,6 +125,27 @@ public class Questao
     public void setTopico(String topico) {
         this.topico = topico;
     }
+
+
+    public NivelTecnico getNivel() {
+        return this.nivel;
+    }
+
+    public void setNivel(NivelTecnico nivel) {
+        this.nivel = nivel;
+    }
+
+
+
+    public String getId() {
+        return this.id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+     
+    
     
 
 

@@ -61,6 +61,7 @@ export class GerenciarBanco implements OnInit {
     this.bancoService.listarTodas().subscribe({
       next: (data) => {
         this.questoes = data;
+        console.log("Questões", this.questoes);
         this.aplicarFiltros(); 
         this.isLoading = false;
       },

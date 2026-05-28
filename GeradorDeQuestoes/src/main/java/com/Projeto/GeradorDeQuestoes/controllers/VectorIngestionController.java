@@ -14,12 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.Projeto.GeradorDeQuestoes.dto.ResultadoIngestaoDTO;
 import com.Projeto.GeradorDeQuestoes.entities.DocumentosReferenciaEntity;
 import com.Projeto.GeradorDeQuestoes.entities.PdfBinarioEntity;
 import com.Projeto.GeradorDeQuestoes.services.DocumentosReferenciaService;
 import com.Projeto.GeradorDeQuestoes.services.PdfBinarioService;
 import com.Projeto.GeradorDeQuestoes.services.VectorIngestionService;
-import com.Projeto.GeradorDeQuestoes.enums.NivelTecnico;
 
 @RestController
 @RequestMapping("/api/documentacao")
@@ -42,8 +43,7 @@ public class VectorIngestionController {
     public ResponseEntity<Map<String, Object>> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam("topico") String topico,
-            @RequestParam("fonte") String fonte,
-            @RequestParam("nivel") String nivel) {
+            @RequestParam("fonte") String fonte) {
 
         if (file.isEmpty()) {
 
@@ -66,18 +66,19 @@ public class VectorIngestionController {
             PdfBinarioEntity pdfBinario = pdfBinarioService.salvarOuRecuperar(bytes, filename);
 
             DocumentosReferenciaEntity docReferencia = documentosReferenciaService.vincularContexto(
-                pdfBinario, topico, NivelTecnico.valueOf(nivel), fonte
+                pdfBinario, topico, fonte
             );
 
             Map<String, Object> metadata = new HashMap<>(); 
 
             metadata.put("topico", topico);
             metadata.put("fonte", fonte);
-            metadata.put("nivel_material", nivel);
+            // metadata.put("nivel_material", nivel);
             metadata.put("arquivo", filename);
             metadata.put("documento_id", pdfBinario.getId().toString()); 
 
-            int chunks = ingestionService.ingerirPdf(bytes, filename, metadata);
+            ResultadoIngestaoDTO chunks = ingestionService.ingerirPdf(bytes, filename, metadata);
+
 
             return ResponseEntity.ok(Map.of(
                 "mensagem", "PDF indexado e vinculado com sucesso",

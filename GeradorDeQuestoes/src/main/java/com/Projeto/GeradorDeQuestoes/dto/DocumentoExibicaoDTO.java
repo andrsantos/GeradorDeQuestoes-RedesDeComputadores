@@ -8,15 +8,13 @@ public class DocumentoExibicaoDTO {
     private UUID idBinario;    
     private String topico;
     private String fonte;
-    private String nivel;
     private String materialReferencia;
 
-    public DocumentoExibicaoDTO(UUID idReferencia, UUID idBinario, String topico, String fonte, String nivel, String materialReferencia) {
+    public DocumentoExibicaoDTO(UUID idReferencia, UUID idBinario, String topico, String fonte, String materialReferencia) {
         this.idReferencia = idReferencia;
         this.idBinario = idBinario;
         this.topico = topico;
         this.fonte = fonte;
-        this.nivel = nivel;
         this.materialReferencia = materialReferencia;
     }
 
@@ -53,14 +51,6 @@ public class DocumentoExibicaoDTO {
 
     public void setFonte(String fonte) {
         this.fonte = fonte;
-    }
-
-    public String getNivel() {
-        return this.nivel;
-    }
-
-    public void setNivel(String nivel) {
-        this.nivel = nivel;
     }
 
     public String getMaterialReferencia() {

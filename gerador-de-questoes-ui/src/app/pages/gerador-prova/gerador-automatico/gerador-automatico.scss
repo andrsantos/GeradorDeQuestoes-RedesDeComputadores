@@ -40,10 +40,11 @@ h1 { color: var(--cor-primaria); margin-bottom: 0.5rem; }
 
 .form-secao h3 { margin-top: 0; color: var(--cor-primaria); }
 
-/* --- SELECT CUSTOMIZADO (Dropdown) --- */
+/* --- SELECT CUSTOMIZADO (Correção de Overflow) --- */
+
 .custom-select-wrapper {
-  position: relative; /* Para o dropdown absoluto */
-  margin-bottom: 1rem;
+  position: relative; /* Crucial: prende o dropdown absoluto a esta caixa */
+  width: 100%;
   user-select: none;
 }
 
@@ -70,30 +71,57 @@ h1 { color: var(--cor-primaria); margin-bottom: 0.5rem; }
   top: 100%;
   left: 0;
   width: 100%;
-  max-height: 300px;
-  overflow-y: auto;
-  background-color: #fff;
+  max-height: 220px; /* Trava a altura para forçar a rolagem */
+  overflow-y: auto; /* Cria a barra de rolagem vertical */
+  background-color: #ffffff;
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-borda);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  z-index: 100; /* Fica por cima de tudo */
-  margin-top: 0.25rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15); /* Sombra mais elegante */
+  z-index: 1050; /* Z-index alto para sobrepor qualquer card abaixo */
+  margin-top: 4px;
 }
 
+/* Estilizando a barra de rolagem para não ficar grosseira */
+.select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.select-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--raio-borda);
+}
+.select-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1; 
+  border-radius: 10px;
+}
+.select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; 
+}
+
+/* Deixando os itens mais compactos */
 .dropdown-item {
   display: flex;
-  align-items: center;
-  padding: 0.75rem;
+  align-items: flex-start; /* Alinha no topo caso o texto quebre linha */
+  padding: 8px 12px; /* Reduzimos o padding */
+  font-size: 0.9rem; /* Fonte um pouco menor */
   cursor: pointer;
   transition: background-color 0.1s;
-  color: var(--cor-texto);
+  color: #334155;
+  border-bottom: 1px solid #f8fafc; /* Linha separadora muito sutil */
 }
-.dropdown-item:hover { background-color: var(--cor-fundo); }
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover { 
+  background-color: #f1f5f9; /* Fundo levemente azulado/cinza no hover */
+}
 
 .dropdown-item input[type="checkbox"] {
-  margin-right: 0.75rem;
-  width: 16px;
-  height: 16px;
+  margin-right: 10px;
+  margin-top: 2px; /* Compensa o alinhamento no flex-start */
+  width: 15px;
+  height: 15px;
   accent-color: var(--cor-primaria);
   cursor: pointer;
 }
@@ -468,4 +496,114 @@ h1 { color: var(--cor-primaria); margin-bottom: 0.5rem; }
   cursor: not-allowed;
   transform: none;
   opacity: 0.8;
+}
+
+/* --- BARRA DE FILTROS QCONCURSOS --- */
+.qconcursos-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  background-color: #f8fafc; /* Fundo levemente acinzentado/azulado */
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  padding: 18px;
+  margin-bottom: 20px;
+  align-items: flex-end; /* Alinha o botão com os inputs */
+}
+
+.form-group-filter {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group-filter label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cor-secundaria);
+  margin: 0;
+}
+
+.form-group-filter select {
+  height: 44px; /* Mesma altura do select-trigger */
+  padding: 0 12px;
+  border-radius: var(--raio-borda);
+  border: 1px solid var(--cor-borda);
+  font-size: 1rem;
+  background-color: #fff;
+}
+
+.btn-adicionar-bloco {
+  background-color: var(--cor-primaria);
+  color: white;
+  height: 44px;
+  padding: 0 1.5rem;
+  border: none;
+  border-radius: var(--raio-borda);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-adicionar-bloco:hover:not(:disabled) {
+  background-color: #0b5ed7;
+  transform: translateY(-1px);
+}
+
+.btn-adicionar-bloco:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.select-trigger.disabled {
+  background-color: #e2e8f0;
+  cursor: not-allowed;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+
+/* Ajustes no Card de Geração */
+.header-titulos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.conceitos-badge {
+  color: var(--cor-primaria);
+  font-weight: 500;
+}
+
+.conceitos-badge.geral {
+  color: var(--cor-secundaria);
+  font-style: italic;
+}
+
+.header-acoes {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.alert-warning-empty {
+  background-color: #f8d7da;
+  color: #842029;
+  padding: 14px 20px;
+  border-radius: var(--raio-borda);
+  border: 1px solid #f5c2c7;
+  margin-bottom: 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+  i {
+    font-size: 1.25rem;
+    color: #dc3545;
+  }
 }

@@ -1,0 +1,244 @@
+:host {
+  display: block;
+  --cor-primaria: #0d6efd;
+  --cor-secundaria: #6c757d;
+  --cor-sucesso: #198754;
+  --cor-fundo: #f8f9fa;
+  --cor-cartao: #ffffff;
+  --cor-borda: #dee2e6;
+  --cor-texto: #212529;
+  --raio-borda: 8px;
+}
+
+.page-container {
+  max-width: 800px;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  
+  h2 {
+    color: var(--cor-texto);
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    
+    i { color: var(--cor-primaria); }
+  }
+  
+  .subtitle {
+    color: var(--cor-secundaria);
+    font-size: 1.1rem;
+  }
+}
+
+.card-formulario {
+  background-color: var(--cor-cartao);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-borda);
+  padding: 2.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.custom-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  label {
+    font-weight: 600;
+    color: var(--cor-texto);
+    font-size: 0.95rem;
+  }
+  
+  input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    
+    &:focus {
+      outline: none;
+      border-color: var(--cor-primaria);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+  }
+  
+  textarea.prompt-edit-area {
+    resize: vertical;
+    min-height: 200px;
+    background-color: #f8fafc;
+  }
+}
+
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.btn-cancelar {
+  padding: 0.75rem 1.5rem;
+  background-color: #e2e8f0;
+  color: var(--cor-texto);
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover { background-color: #cbd5e1; }
+}
+
+.btn-salvar {
+  padding: 0.75rem 2rem;
+  background-color: var(--cor-primaria);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+  
+  &:hover:not(:disabled) { background-color: #0b5ed7; }
+  
+  &:disabled {
+    background-color: #a0c4ff;
+    cursor: not-allowed;
+  }
+}
+
+/* --- ÁREA DE VINCULAÇÃO DE DOCUMENTOS --- */
+.vinculacao-section {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background-color: #f8fafc;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+}
+
+.vinculacao-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  label {
+    font-weight: 600;
+    color: var(--cor-texto);
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .badge-selecao {
+    background-color: #eef2ff;
+    color: var(--cor-primaria);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+}
+
+.input-busca-doc {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-family: inherit;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--cor-primaria);
+  }
+}
+
+.document-list-container {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  background-color: #fff;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--cor-borda);
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: #f1f5f9;
+  }
+
+  &.selecionado {
+    background-color: #f0fdf4; /* Fundo levemente verde quando selecionado */
+  }
+
+  .checkbox-wrapper {
+    margin-right: 15px;
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+  }
+
+  .doc-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .doc-title {
+      font-weight: 600;
+      color: var(--cor-texto);
+      font-size: 0.95rem;
+    }
+
+    .doc-meta {
+      font-size: 0.8rem;
+      color: var(--cor-secundaria);
+    }
+  }
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--cor-secundaria);
+  
+  i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+  }
+}
+

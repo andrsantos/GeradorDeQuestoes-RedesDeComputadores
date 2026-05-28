@@ -1,8 +1,21 @@
 <div class="dashboard-container">
   <h1>Painel Principal</h1>
-  <p class="subtitle">Selecione uma ação para começar.</p>
+  <p class="subtitle">Selecione uma ação para começar.<br>Dica: se não tiver documentos cadastrados, comece cadastrando uma documentação.</p>
 
   <div class="card-grid">
+
+
+    <!-- Card 4: Alimentação -->
+    <a class="card" [routerLink]="['/gerenciamento']">
+      <div class="icon-wrapper" style="background-color: #fdeeee;">
+        <!-- Ícone SVG de "Upload" -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--cor-perigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+      </div>
+      <h3>Documentação</h3>
+      <p>Insira documentos no sistema para começar a gerar novas questões.</p>
+    </a>
+
+
 
     <!-- Card 1: Gerar Provas -->
     <a class="card" [routerLink]="['/gerar-prova']">
@@ -10,19 +23,18 @@
         <!-- Ícone SVG de "Adicionar" -->
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--cor-primaria)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       </div>
-      <h3>Gerar Prova</h3>
-      <p>Criar uma nova prova selecionando tópicos e questões.</p>
+      <h3>Geração</h3>
+      <p>Clique aqui para começar a gerar novas questões e provas.</p>
     </a>
 
     <!-- Card 2: Provas Geradas -->
-    <a class="card" href="#" [routerLink]="['/provas-salvas']">
+    <!-- <a class="card" href="#" [routerLink]="['/provas-salvas']">
       <div class="icon-wrapper" style="background-color: #e8f3e8;">
-        <!-- Ícone SVG de "Lista" -->
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--cor-sucesso)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
       </div>
       <h3>Provas Geradas</h3>
       <p>Visualizar, editar ou baixar provas salvas no banco.</p>
-    </a>
+    </a> -->
 
     <!-- Card 3: Banco de Questões -->
     <a class="card" href="#" [routerLink]="['/banco-questoes']">
@@ -31,17 +43,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
       </div>
       <h3>Banco de Questões</h3>
-      <p>Gerenciar todo o conteúdo de RAG e os chunks de texto.</p>
-    </a>
-
-    <!-- Card 4: Alimentação -->
-    <a class="card" [routerLink]="['/alimentacao']">
-      <div class="icon-wrapper" style="background-color: #fdeeee;">
-        <!-- Ícone SVG de "Upload" -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--cor-perigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-      </div>
-      <h3>Alimentação</h3>
-      <p>Fazer upload de novos PDFs e documentos para o RAG.</p>
+      <p>Gerencie todas as suas questões cadastradas.</p>
     </a>
 
     

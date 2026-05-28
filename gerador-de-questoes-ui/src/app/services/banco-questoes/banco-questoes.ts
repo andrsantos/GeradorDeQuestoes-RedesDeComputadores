@@ -7,7 +7,7 @@ import { BancoQuestao } from '../../models/banco-questao.model';
   providedIn: 'root',
 })
 export class BancoQuestoesService {
-  private readonly API_URL = 'http://187.77.240.149:82/api/banco-questoes';
+  private readonly API_URL = 'http://localhost:8080/api/banco-questoes';
 
   constructor(private http: HttpClient) {}
 

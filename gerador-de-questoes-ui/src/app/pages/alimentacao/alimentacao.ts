@@ -25,7 +25,7 @@ export interface EstadoEdicaoExtraida {
 })
 export class Alimentacao {
   public arquivo: File | null = null;
-  public topico: string = 'Redes TCP/IP'; 
+  public topico: string = ''; 
   public isHovering = false;
   public uploadProgress: number | null = null;
   public isProcessing = false; 
@@ -40,6 +40,8 @@ export class Alimentacao {
   public nivelSelecionado: string = 'UNIVERSITARIO_INTERMEDIARIO';
   public fonteContexto: string = '';
   public idPdfCadastrado: string | null = null;
+  public modalContextoAberta = false;
+  public promptContexto: string = '';
 
   constructor(
     private alimentacaoService: AlimentacaoService,
@@ -90,6 +92,17 @@ onFileSelected(event: any, tipo: 'contexto' | 'questoes'): void {
     this.isHovering = false;
   }
 
+  onDropContexto(event: DragEvent): void {
+    event.preventDefault();
+    this.isHovering = false;
+    const file = event.dataTransfer?.files[0];
+    if (file?.type === 'application/pdf') {
+      this.abrirModalContexto(file);
+    } else {
+      this.toastr.error('Por favor, selecione apenas arquivos PDF.', 'Formato Inválido');
+    }
+  }
+
   removerArquivo(tipo: 'contexto' | 'questoes'): void {
     if (tipo === 'contexto') {
       this.arquivoContexto = null;
@@ -108,7 +121,7 @@ onFileSelected(event: any, tipo: 'contexto' | 'questoes'): void {
     this.arquivo = arquivo;
     this.isArquivoContexto = true;
     this.isProcessingRag = true;
-    return this.alimentacaoService.uploadPdf(arquivo,topico, nivel,this.fonteContexto);
+    return this.alimentacaoService.uploadPdf(arquivo,topico,this.fonteContexto);
   }
 
 
@@ -140,6 +153,7 @@ onFileSelected(event: any, tipo: 'contexto' | 'questoes'): void {
           } else {
             this.toastr.success('Contexto alimentado com sucesso!', 'Sucesso');
             this.arquivoContexto = null;
+            this.fecharModalContexto();
           }
         }
       },
@@ -256,4 +270,27 @@ confirmarESalvarNoBanco() {
       window.URL.revokeObjectURL(url);
     }
   }
+
+  abrirModalContexto(file?: File): void {
+    this.modalContextoAberta = true;
+    if (file) {
+      this.arquivoContexto = file;
+      this.isArquivoContexto = true;
+    }
+  }
+
+  fecharModalContexto(): void {
+    this.modalContextoAberta = false;
+    this.arquivoContexto = null;
+    this.promptContexto = '';
+  }
+
+  isContextoValido(): boolean {
+    return !!this.arquivoContexto && 
+           this.promptContexto.trim().length > 0 && 
+           this.topico.trim().length > 0 && 
+           this.fonteContexto.trim().length > 0;
+  }
+
+
 }

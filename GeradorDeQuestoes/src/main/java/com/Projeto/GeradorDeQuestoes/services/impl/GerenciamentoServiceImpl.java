@@ -1,5 +1,6 @@
 package com.Projeto.GeradorDeQuestoes.services.impl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,15 +9,19 @@ import com.Projeto.GeradorDeQuestoes.dto.CenarioConfigDTO;
 import com.Projeto.GeradorDeQuestoes.dto.TopicoConfigDTO;
 import com.Projeto.GeradorDeQuestoes.dto.VectorStoreDTO;
 import com.Projeto.GeradorDeQuestoes.entities.CenarioConfigEntity;
+import com.Projeto.GeradorDeQuestoes.entities.DocumentoPromptEntity;
 import com.Projeto.GeradorDeQuestoes.entities.DocumentosReferenciaEntity;
 import com.Projeto.GeradorDeQuestoes.entities.TopicoConfigEntity;
 import com.Projeto.GeradorDeQuestoes.entities.VectorStoreEntity;
 import com.Projeto.GeradorDeQuestoes.repositories.CenarioConfigRepository;
+import com.Projeto.GeradorDeQuestoes.repositories.DocumentoPromptRepository;
 import com.Projeto.GeradorDeQuestoes.repositories.DocumentosReferenciaRepository;
 import com.Projeto.GeradorDeQuestoes.repositories.TopicoConfigRepository;
 import com.Projeto.GeradorDeQuestoes.repositories.VectorStoreRepository;
 import com.Projeto.GeradorDeQuestoes.dto.DocumentoExibicaoDTO;
 import com.Projeto.GeradorDeQuestoes.services.GerenciamentoService;
+
+/* TÓPICO, NO CONTEXTO DA APLICAÇÃO, DEVE SER ENTENDIDO COMO PROMPT */
 
 @Service
 public class GerenciamentoServiceImpl implements GerenciamentoService {
@@ -25,15 +30,17 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
     private final CenarioConfigRepository cenarioConfigRepository;
     private final VectorStoreRepository vectorStoreRepository;
     private final DocumentosReferenciaRepository documentosReferenciaRepository;
+    private final DocumentoPromptRepository documentosPromptRepository;
 
 
     public GerenciamentoServiceImpl(TopicoConfigRepository topicoConfigRepository, CenarioConfigRepository cenarioConfigRepository,
-        VectorStoreRepository vectorStoreRepository, DocumentosReferenciaRepository documentosReferenciaRepository
+        VectorStoreRepository vectorStoreRepository, DocumentosReferenciaRepository documentosReferenciaRepository, DocumentoPromptRepository documentosPromptRepository
     ) {
         this.topicoConfigRepository = topicoConfigRepository;
         this.cenarioConfigRepository = cenarioConfigRepository;
         this.vectorStoreRepository = vectorStoreRepository;
         this.documentosReferenciaRepository = documentosReferenciaRepository;
+        this.documentosPromptRepository = documentosPromptRepository;
     }
     
     /** OPERAÇÕES CRUD DE PROMPTS **/
@@ -44,16 +51,29 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
 
     @Override
     public TopicoConfigDTO criarTopico(TopicoConfigDTO topicoConfigDTO) {
+
         TopicoConfigEntity topicoConfigEntity = new TopicoConfigEntity();
         topicoConfigEntity.setTopico(topicoConfigDTO.getTopico());
         topicoConfigEntity.setNivel(topicoConfigDTO.getNivel());
         topicoConfigEntity.setInstrucoesEspecificas(topicoConfigDTO.getInstrucoesEspecificas());
+        topicoConfigEntity.setDataAtualizacao(LocalDateTime.now());
         TopicoConfigEntity savedEntity = topicoConfigRepository.save(topicoConfigEntity);
+
         TopicoConfigDTO savedDTO = new TopicoConfigDTO();
         savedDTO.setId(savedEntity.getId());
         savedDTO.setTopico(savedEntity.getTopico());
         savedDTO.setNivel(savedEntity.getNivel());
         savedDTO.setInstrucoesEspecificas(savedEntity.getInstrucoesEspecificas());
+        savedDTO.setDataAtualizacao(LocalDateTime.now());
+
+        
+        topicoConfigDTO.getListaDocumentos().forEach(documento -> {
+        DocumentoPromptEntity documentoPrompt = new DocumentoPromptEntity();
+        documentoPrompt.setIdDocumento(documento);
+        documentoPrompt.setIdPrompt(savedEntity.getId());
+        documentosPromptRepository.save(documentoPrompt);
+        });
+
         return savedDTO;
     }
 
@@ -154,7 +174,6 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
             DocumentoExibicaoDTO dto = new DocumentoExibicaoDTO();
             dto.setIdBinario(ref.getPdfBinario().getId()); 
             dto.setTopico(ref.getTopico());
-            dto.setNivel(ref.getNivel().toString());
             dto.setMaterialReferencia(ref.getPdfBinario().getNomeOriginal());
             return dto;
         }).toList();
@@ -169,7 +188,6 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
             ref.getPdfBinario().getId(),
             ref.getTopico(),
             ref.getFonte(), 
-            ref.getNivel().toString(),
             ref.getPdfBinario().getNomeOriginal()
         )).toList();
     }

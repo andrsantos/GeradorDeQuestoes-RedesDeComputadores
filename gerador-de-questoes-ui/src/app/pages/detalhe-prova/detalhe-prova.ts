@@ -2,13 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common'; 
 import { FormsModule } from '@angular/forms'; 
 import { ActivatedRoute, RouterLink, Router } from '@angular/router'; 
-import { Observable, switchMap, tap } from 'rxjs';
+import { firstValueFrom, Observable, switchMap, tap } from 'rxjs';
 import { ProvaSalva } from '../../models/prova-entity.model'; 
 import { Questao } from '../../models/questao.model';
 import { ToastrService } from 'ngx-toastr';
 import { ProvaService } from '../../services/prova/prova-service';
 import { NotificationService } from '../../services/notification/notification-service';
 import { ProvaManualStateService } from '../../services/prova-manual-state/prova-manual-state';
+import { IntegracaoAvaliarService } from '../../services/integracao-avaliar/integracao-avaliar';
 
 @Component({
   selector: 'app-detalhe-prova',
@@ -35,6 +36,8 @@ export class DetalheProva implements OnInit {
   
   public topicosDisponiveis: string[] = [];
 
+  public isExporting = false;
+
   objectKeys = Object.keys;
 
   constructor(
@@ -43,7 +46,8 @@ export class DetalheProva implements OnInit {
     private router: Router,
     private notificationService: NotificationService,
     private toastr: ToastrService,
-    private stateService: ProvaManualStateService 
+    private stateService: ProvaManualStateService ,
+    private integracaoAvaliarService: IntegracaoAvaliarService
   ) {}
 
   ngOnInit(): void {
@@ -214,4 +218,63 @@ export class DetalheProva implements OnInit {
         error: () => this.isDownloading = false
      });
   }
+
+  async exportarFormatoAvaliar() {
+    this.isExporting = true;
+    
+    try {
+      const prova = await firstValueFrom(this.prova$);
+      
+      if (!prova || !prova.questoes || prova.questoes.length === 0) {
+        this.toastr.warning("A prova está vazia.", "Aviso");
+        this.isExporting = false;
+        return;
+      }
+
+      let numero = 1;
+      const payloadFormatado = prova.questoes.map(q => ({
+        numeroQuestao: numero++,
+        enunciado: q.enunciado,
+        alternativas: q.alternativas,
+        respostaCorreta: q.respostaCorreta
+      }));
+
+      this.integracaoAvaliarService.exportarFormatoAvaliar(payloadFormatado).subscribe({
+        next: (data: string) => {
+          this.toastr.success("Prova exportada para avaliação com sucesso!", 'Sucesso!');
+          if (data && data.trim().length > 0) {
+            this.baixarArquivoTxt(data);
+          } else {
+            this.toastr.warning("O servidor retornou uma prova vazia.", "Aviso");
+          }
+          this.isExporting = false;
+        },
+        error: (err: any) => {
+          console.error("Erro ao exportar prova para avaliação:", err);
+          this.toastr.error("Falha ao exportar prova para avaliação.", 'Erro');
+          this.isExporting = false;
+        }
+      });
+      
+    } catch (error) {
+       console.error("Erro ao processar prova para exportação:", error);
+       this.toastr.error("Falha ao ler os dados da prova.", 'Erro');
+       this.isExporting = false;
+    }
+  }
+
+  private baixarArquivoTxt(conteudo: string) {
+    const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+    link.download = `prova-avaliacao-${dataAtual}.txt`;
+    
+    link.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+
 }

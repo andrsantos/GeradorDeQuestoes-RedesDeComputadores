@@ -115,14 +115,6 @@ public class QuestaoDTO {
         this.topico = topico;
     }
 
-    public NivelTecnico getNivel() {
-        return this.nivel;
-    }
-
-    public void setNivel(NivelTecnico nivel) {
-        this.nivel = nivel;
-    }
-
     public String getId() {
         return this.id;
     }
@@ -140,8 +132,13 @@ public class QuestaoDTO {
     }
 
 
+    public NivelTecnico getNivel() {
+        return this.nivel;
+    }
 
-
-
+    public void setNivel(NivelTecnico nivel) {
+        this.nivel = nivel;
+    }
     
+
 }

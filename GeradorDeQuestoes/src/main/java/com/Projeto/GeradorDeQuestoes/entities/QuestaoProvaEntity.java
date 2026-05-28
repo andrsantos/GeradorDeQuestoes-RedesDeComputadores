@@ -3,7 +3,7 @@ package com.Projeto.GeradorDeQuestoes.entities;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 
 @Entity
@@ -11,10 +11,10 @@ import java.util.Map;
 public class QuestaoProvaEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID) 
+    private String id; 
 
-    @JsonBackReference
+    @JsonIgnore 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "prova_id", nullable = false)
     private ProvaEntity prova;
@@ -29,26 +29,59 @@ public class QuestaoProvaEntity {
     @Column(name = "resposta_correta")
     private String respostaCorreta;
 
-    @Column(name = "explicacao", columnDefinition = "TEXT")
-    private String explicacao;
+    @Column(name = "topico")
+    private String topico;
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    @Column(name = "conceito")
+    private String conceito;
+
+    @Column(name = "nivel")
+    private String nivel;
+    
+    @Column(name = "competencia")
+    private String competencia;
+
+    @Column(name = "comentario_tecnico", columnDefinition = "TEXT")
+    private String comentarioTecnico;
+
+    public QuestaoProvaEntity() {
+    }
+
+
+
+    public String getId() {
+        return this.id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+    
+
     public ProvaEntity getProva() { return prova; }
     public void setProva(ProvaEntity prova) { this.prova = prova; }
+
     public String getEnunciado() { return enunciado; }
     public void setEnunciado(String enunciado) { this.enunciado = enunciado; }
+
     public Map<String, String> getAlternativas() { return alternativas; }
     public void setAlternativas(Map<String, String> alternativas) { this.alternativas = alternativas; }
+
     public String getRespostaCorreta() { return respostaCorreta; }
     public void setRespostaCorreta(String respostaCorreta) { this.respostaCorreta = respostaCorreta; }
 
-    public String getExplicacao() {
-        return this.explicacao;
-    }
+    public String getTopico() { return topico; }
+    public void setTopico(String topico) { this.topico = topico; }
 
-    public void setExplicacao(String explicacao) {
-        this.explicacao = explicacao;
-    }
+    public String getConceito() { return conceito; }
+    public void setConceito(String conceito) { this.conceito = conceito; }
 
+    public String getNivel() { return nivel; }
+    public void setNivel(String nivel) { this.nivel = nivel; }
+
+    public String getCompetencia() { return competencia; }
+    public void setCompetencia(String competencia) { this.competencia = competencia; }
+
+    public String getComentarioTecnico() { return comentarioTecnico; }
+    public void setComentarioTecnico(String comentarioTecnico) { this.comentarioTecnico = comentarioTecnico; }
 }

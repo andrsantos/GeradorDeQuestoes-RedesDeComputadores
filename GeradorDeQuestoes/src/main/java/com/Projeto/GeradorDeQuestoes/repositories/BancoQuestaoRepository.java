@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface BancoQuestaoRepository extends JpaRepository<BancoQuestaoEntity, UUID> {
  List<BancoQuestaoEntity> findByTopico(String topico);
  List<BancoQuestaoEntity> findByNivel(String nivel);
+ List<BancoQuestaoEntity> findByConceito(String conceito);
 }

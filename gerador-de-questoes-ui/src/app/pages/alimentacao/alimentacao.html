@@ -4,60 +4,27 @@
 
   <div class="menu-grid">
     
-    <!-- CARD 1: ALIMENTAR CONTEXTO (RAG) -->
+<!-- CARD 1: ALIMENTAR CONTEXTO (RAG) -->
     <div class="menu-card">
       <div class="card-header">
         <div class="icon-circle">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
         </div>
         <h2>Alimentar Contexto</h2>
-        <p>Suba livros, artigos ou apostilas para o RAG.</p>
+        <p>Suba livros, artigos ou apostilas atrelados a um Prompt.</p>
       </div>
 
       <div class="upload-section">
-        <!-- Dropzone exclusivo para Contexto -->
-        <div class="dropzone" *ngIf="!arquivoContexto" 
-             (drop)="onDrop($event, 'contexto')" 
+        <!-- O Dropzone agora apenas abre a Modal -->
+        <div class="dropzone" 
+             (drop)="onDropContexto($event)" 
+
+
+      
              (dragover)="onDragOver($event)" 
              [class.drag-over]="isHovering">
-           <p>Arraste PDF de Contexto</p>
-           <label for="fileContexto" class="btn-selecionar">Selecionar Livro/Artigo</label>
-           <input type="file" id="fileContexto" (change)="onFileSelected($event, 'contexto')" accept=".pdf" hidden>
-        </div>
-
-        <!-- Feedback exclusivo para Contexto -->
-        <div class="arquivo-selecionado" *ngIf="arquivoContexto">
-          <div class="arquivo-info">
-            <span>{{ arquivoContexto.name }}</span>
-            <button (click)="removerArquivo('contexto')" class="btn-remover">&times;</button>
-          </div>
-          
-          <div class="form-group">
-            <label>Tópico de Contexto:</label>
-            <input [(ngModel)]="topico" placeholder="Ex: Redes de Computadores">
-          </div>
-
-          <div class="form-group">
-            <label>Nível de Dificuldade:</label>
-            <select [(ngModel)]="nivelSelecionado" class="form-control-select">
-              <option value="UNIVERSITARIO_INICIANTE">Universitário Iniciante</option>
-              <option value="UNIVERSITARIO_INTERMEDIARIO">Universitário Intermediário</option>
-              <option value="UNIVERSITARIO_AVANCADO">Universitário Avançado</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Fonte:</label>
-            <input [(ngModel)]="fonteContexto" placeholder="Ex: Livro do Tanenbaum, Documento Institucional...">
-          </div>
-
-          <button (click)="iniciarUpload('contexto')" class="btn-upload" [disabled]="isProcessingRag">
-            <span *ngIf="!isProcessingRag">Alimentar RAG</span>
-            <div *ngIf="isProcessingRag" class="loader-container">
-              <span class="loader-small"></span>
-              <span>Processando...</span>
-            </div>
-          </button>
+           <p>Arraste o PDF aqui ou clique abaixo</p>
+           <button class="btn-selecionar" (click)="abrirModalContexto()">Cadastrar Novo Contexto</button>
         </div>
       </div>
     </div>
@@ -176,6 +143,64 @@
     <button class="btn-cancelar" (click)="modalQuestoesAberta = false">Cancelar</button>
     <button class="btn-finalizar-batch" (click)="confirmarESalvarNoBanco()">
       Confirmar e Salvar {{ questoesAprovadas.size }} Blocos no Banco
+    </button>
+  </div>
+</div>
+
+<!-- MODAL DE CADASTRO DE CONTEXTO (RAG) -->
+<div class="modal-backdrop" *ngIf="modalContextoAberta"></div>
+
+<div class="modal" *ngIf="modalContextoAberta" style="width: 700px; max-width: 95%;">
+  <div class="modal-header sticky-header">
+    <div class="header-info">
+      <h2>Cadastrar Documento</h2>
+    </div>
+    <div class="header-actions">
+      <button class="btn-fechar" (click)="fecharModalContexto()">✖</button>
+    </div>
+  </div>
+
+  <div class="modal-body">
+    <div class="form-group">
+      <label>Tópico de Contexto (*):</label>
+      <input [(ngModel)]="topico" placeholder="Ex: Camada Física, Camada de Aplicação">
+    </div>
+
+    <div class="form-group">
+      <label>Nível de Dificuldade (*):</label>
+      <select [(ngModel)]="nivelSelecionado" class="form-control-select" style="width: 100%; padding: 8px; border: 1px solid var(--cor-primaria); border-radius: 4px;">
+        <option value="UNIVERSITARIO_INICIANTE">Universitário Iniciante</option>
+        <option value="UNIVERSITARIO_INTERMEDIARIO">Universitário Intermediário</option>
+        <option value="UNIVERSITARIO_AVANCADO">Universitário Avançado</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Fonte (*):</label>
+      <input [(ngModel)]="fonteContexto" placeholder="Ex: Kurose & Ross - Capítulo 3...">
+    </div>
+
+    <div class="form-group" style="margin-top: 1.5rem; padding: 1rem; border: 1px dashed var(--cor-primaria); border-radius: 8px; background: #f8fafc;">
+      <label style="display: block; margin-bottom: 10px; font-weight: bold; color: var(--cor-primaria);">
+        Selecione o Material PDF (*):
+      </label>
+      <input type="file" id="fileContextoModal" (change)="onFileSelected($event, 'contexto')" accept=".pdf" hidden>
+      <label for="fileContextoModal" class="btn-selecionar" style="display: inline-block;">Procurar PDF no Computador</label>
+      
+      <div *ngIf="arquivoContexto" style="margin-top: 10px; color: var(--cor-sucesso); font-weight: bold;">
+        📄 Arquivo selecionado: {{ arquivoContexto.name }}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn-cancelar" (click)="fecharModalContexto()" [disabled]="isProcessingRag">Cancelar</button>
+    <button class="btn-finalizar-batch" (click)="iniciarUpload('contexto')" [disabled]="!isContextoValido() || isProcessingRag">
+      <span *ngIf="!isProcessingRag">Salvar e Alimentar RAG</span>
+      <div *ngIf="isProcessingRag" class="loader-container" style="display: flex; gap: 8px; align-items: center;">
+        <span class="loader-small"></span> Processando...
+      </div>
     </button>
   </div>
 </div>

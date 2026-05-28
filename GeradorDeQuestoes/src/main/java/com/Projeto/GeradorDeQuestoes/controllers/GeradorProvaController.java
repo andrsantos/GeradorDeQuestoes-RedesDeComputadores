@@ -7,6 +7,9 @@ import com.Projeto.GeradorDeQuestoes.dto.Questao;
 import com.Projeto.GeradorDeQuestoes.dto.QuestaoDTO;
 import com.Projeto.GeradorDeQuestoes.services.BancoQuestaoService;
 import com.Projeto.GeradorDeQuestoes.services.GeradorProvaService;
+
+import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +17,7 @@ import org.springframework.http.MediaType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -73,7 +77,13 @@ public class GeradorProvaController {
             
             Prova prova = provaService.adicionarQuestoesAutomatico(id, request);
             return ResponseEntity.ok(prova);
-        } catch (Exception e) {
+        } 
+        
+        catch(EntityNotFoundException e) {
+            return ResponseEntity.status(404).body(Map.of("erro", e.getMessage()));
+        }
+        
+        catch (Exception e) {
             e.printStackTrace(); 
             return ResponseEntity.status(500).body(e.getMessage()); 
         }
@@ -109,7 +119,13 @@ public class GeradorProvaController {
             Prova prova = provaService.adicionarQuestoesDoBanco(id, questoesParaConverter);
             return ResponseEntity.ok(prova);
 
-        } catch (Exception e) {
+        } 
+        
+        catch(IllegalArgumentException e) {
+            e.printStackTrace(); 
+            return ResponseEntity.status(404).body(Map.of("erro", e.getMessage()));
+        }
+        catch (Exception e) {
             e.printStackTrace(); 
             return ResponseEntity.status(500).body(e.getMessage()); 
         }

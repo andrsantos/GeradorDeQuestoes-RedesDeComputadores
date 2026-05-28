@@ -3,4 +3,5 @@ export interface Prompt {
     topico: string;
     nivel: string;
     instrucoesEspecificas: string;
+    listaDocumentos: string[];
 }

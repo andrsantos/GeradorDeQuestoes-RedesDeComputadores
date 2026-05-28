@@ -101,6 +101,13 @@ public class GerenciamentoController {
 
             List<DocumentoExibicaoDTO> lista = gerenciamentoService
             .listarDocumentosCadastrados();
+
+
+            lista.forEach(documento -> {
+                System.out.println("Fonte: " + documento.getFonte());
+                System.out.println("Topico: " + documento.getTopico());
+                System.out.println("Material de Referencia: " + documento.getMaterialReferencia());
+            });
             
             return ResponseEntity.ok(lista);
 

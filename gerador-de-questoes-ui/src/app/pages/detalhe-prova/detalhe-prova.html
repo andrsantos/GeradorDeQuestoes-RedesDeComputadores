@@ -12,8 +12,8 @@
     <div class="botoes-acao">
       <a [routerLink]="['/provas-salvas']" class="btn-voltar">&larr; Voltar</a>
       
-      <button class="btn-download" (click)="onDownloadPdf()" [disabled]="isDownloading">
-        <span *ngIf="!isDownloading">Baixar PDF</span>
+      <button class="btn-download" (click)="exportarFormatoAvaliar()" [disabled]="isDownloading">
+        <span *ngIf="!isDownloading">Exportar Formato Avaliar</span>
         <span *ngIf="isDownloading" class="loader"></span>
       </button>
 
@@ -32,9 +32,9 @@
       <!-- Header da Questão com botão Editar -->
       <div class="questao-header">
         <h3>{{ i + 1 }}. {{ questao.enunciado }}</h3>
-        <button class="btn-editar-questao" (click)="abrirModalEdicao(questao)">
+        <!-- <button class="btn-editar-questao" (click)="abrirModalEdicao(questao)">
           Editar
-        </button>
+        </button> -->
       </div>
       
       <!-- Exibe alternativas se existirem e forem válidas -->

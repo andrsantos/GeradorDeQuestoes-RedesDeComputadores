@@ -13,15 +13,19 @@ import { Questao } from '../../models/questao.model';
 })
 export class ProvaService {
 
-  private readonly API_URL = 'http://187.77.240.149:82/api/provas';
-  private readonly API_URL_SALVAS = 'http://187.77.240.149:82/api/provas-salvas';
-  private readonly API_URL_TOPICOS = 'http://187.77.240.149:82/api/topicos'; 
-  private readonly API_QUESTOES_GERAR = 'http://187.77.240.149:82/api/questoes/gerar'; 
+  private readonly API_URL = 'http://localhost:8080/api/provas';
+  private readonly API_URL_SALVAS = 'http://localhost:8080/api/provas-salvas';
+  private readonly API_URL_TOPICOS = 'http://localhost:8080/api/topicos'; 
+  private readonly API_QUESTOES_GERAR = 'http://localhost:8080/api/questoes/gerar'; 
 
   constructor(private http: HttpClient) {}
 
   criarProva(): Observable<Prova> {
     return this.http.post<Prova>(this.API_URL, {});
+  }
+
+  salvarProvaNoBanco(prova: Prova): Observable<any> {
+    return this.http.post<any>(this.API_URL_SALVAS, prova);
   }
 
   getProva(id: string): Observable<Prova> {
@@ -42,11 +46,13 @@ export class ProvaService {
   return this.http.post<Prova>(`${this.API_URL}/${id}/prova-banco`, request);
   }
 
-  adicionarQuestoesAutomatico(id: string, topicos: TopicoQuantidade[]): Observable<Prova> {
-    const request = { topicos: topicos };
-    console.log("Request adicionarQuestoesAutomatico:", request);
-    return this.http.post<Prova>(`${this.API_URL}/${id}/questoes-automaticas`, request);
-  }
+  adicionarQuestoesAutomatico(id: string, topicos: any[]): Observable<Prova> {
+      const request = { topicos: topicos };
+      
+      console.log("Payload enviado para o Java:", request);
+      
+      return this.http.post<Prova>(`${this.API_URL}/${id}/questoes-automaticas`, request);
+    }
 
   descartarQuestao(id: string, indice: number): Observable<Prova> {
     const params = new HttpParams().set('indice', indice.toString());
@@ -79,6 +85,11 @@ export class ProvaService {
 
   getTopicosDisponiveis(): Observable<string[]> {
     return this.http.get<string[]>(this.API_URL_TOPICOS);
+  }
+
+  getConceitosPorTopico(topico: string): Observable<string[]> {
+    const url = `${this.API_URL_TOPICOS}/${encodeURIComponent(topico)}/conceitos`;
+    return this.http.get<string[]>(url);
   }
 
 

@@ -2,8 +2,10 @@ package com.Projeto.GeradorDeQuestoes.services;
 
 import java.util.Map;
 
+import com.Projeto.GeradorDeQuestoes.dto.ResultadoIngestaoDTO;
+
 public interface VectorIngestionService {
 
-    int ingerirPdf(byte[] pdfBytes, String filename, Map<String, Object> metadata);
+    ResultadoIngestaoDTO ingerirPdf(byte[] pdfBytes, String filename, Map<String, Object> metadata);
     
 }

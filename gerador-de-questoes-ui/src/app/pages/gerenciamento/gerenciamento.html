@@ -1,6 +1,7 @@
+
 <div class="admin-container">
   <h2>Painel de Gerenciamento de Banco</h2>
-  <p>Selecione a base de dados que deseja visualizar ou editar:</p>
+  <p>Pesquise os registros de documentação para ver os materiais cadastrados na sua base, <br>inserir ou excluir novos materiais.</p>
 
   <form [formGroup]="managementForm" (ngSubmit)="onSearch()">
     <div class="selection-group">
@@ -12,19 +13,22 @@
         <input type="radio" formControlName="tableType" value="scenarios">
         Cenários
       </label>
-      <label>
+      <label style="display:none;">
         <input type="radio" formControlName="tableType" value="prompts">
         Prompts
       </label>
     </div>
-    <button type="submit" [disabled]="!managementForm.valid" class="btn-search">
-      Pesquisar Registros
+    <button type="submit" [disabled]="!managementForm.valid || isSearching" class="btn-search">
+      <span *ngIf="!isSearching">Pesquisar Registros de Documentação</span>
+      
+      <div *ngIf="isSearching" style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+        <span class="loader-small"></span> Pesquisando...
+      </div>
     </button>
   </form>
 
   <div class="results-area" *ngIf="searchPerformed">
 
-    <!-- Tabela de Cenários -->
     <div *ngIf="managementForm.get('tableType')?.value === 'scenarios'">
       <div class="filters-container">
         <div class="filter-group">
@@ -79,7 +83,6 @@
       </div>
     </div>
 
-    <!-- Tabela de Prompts -->
     <div *ngIf="managementForm.get('tableType')?.value === 'prompts'">
       <div class="filters-container">
         <div class="filter-group">
@@ -90,9 +93,9 @@
           <label>Nível:</label>
           <select [(ngModel)]="filtroNivel" (change)="onFiltroChange()">
             <option value="">Todos os Níveis</option>
-            <option value="FACIL">Fácil</option>
-            <option value="MEDIO">Médio</option>
-            <option value="DIFICIL">Difícil</option>
+            <option value="UNIVERSITARIO_INICIANTE">UNIVERSITARIO_INICIANTE</option>
+            <option value="UNIVERSITARIO_INTERMEDIARIO">UNIVERSITARIO_INTERMEDIARIO</option>
+            <option value="UNIVERSITARIO_AVANCADO">UNIVERSITARIO_AVANCADO</option>
           </select>
         </div>
         <button type="button" class="btn-clear" (click)="limparFiltros()">Limpar Filtros</button>
@@ -100,7 +103,7 @@
 
       <div class="table-header-actions">
         <span>Encontrados: <strong>{{ listaPromptsFiltrada.length }}</strong> registros</span>
-        <button type="button" class="btn-insert" (click)="abrirModalInsercaoPrompt()">
+        <button type="button" class="btn-insert" (click)="irParaCadastroPrompt()">
           <i class="fas fa-plus-circle"></i> Novo Prompt
         </button>
       </div>
@@ -123,9 +126,9 @@
             <td>
               <span *ngIf="idPromptEditando !== prompt.id" class="badge" [ngClass]="prompt.nivel.toLowerCase()">{{ prompt.nivel }}</span>
               <select *ngIf="idPromptEditando === prompt.id" [(ngModel)]="promptTemporario.nivel" class="inline-select">
-                <option value="FACIL">Fácil</option>
-                <option value="MEDIO">Médio</option>
-                <option value="DIFICIL">Difícil</option>
+                <option value="UNIVERSITARIO_INICIANTE">Fácil</option>
+                <option value="UNIVERSITARIO_INTERMEDIARIO">Médio</option>
+                <option value="UNIVERSITARIO_AVANCADO">Difícil</option>
               </select>
             </td>
             <td>
@@ -155,8 +158,7 @@
       </div>
     </div>
 
-    <!-- Tabela de Documentação (Vector Store) -->
-    <div *ngIf="managementForm.get('tableType')?.value === 'documentation'">
+      <div *ngIf="managementForm.get('tableType')?.value === 'documentation'">
       <div class="filters-container">
         <div class="filter-group">
           <label>Filtrar Tópico/Fonte:</label>
@@ -176,54 +178,58 @@
 
       <div class="table-header-actions">
         <span>Materiais na Base: <strong>{{ listaMateriaisFiltrada.length }}</strong></span>
-        <span class="info-label"><i class="fas fa-book"></i> Biblioteca de Arquivos</span>
+        <button type="button" class="btn-insert" (click)="abrirModalContexto()">
+          <i class="fas fa-plus-circle"></i> Cadastrar Documento
+        </button>
       </div>
 
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Tópico</th>
-            <th>Fonte</th>
-            <th>Nível</th>
-            <th>Material de Referência</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let mat of listaMateriaisPaginada">
-            <td class="font-weight-bold">{{ mat.topico }}</td>
-            <td><small>{{ mat.fonte }}</small></td>
-            <td>
-              <!-- Pega apenas o "INTERMEDIARIO" da string "UNIVERSITARIO_INTERMEDIARIO" -->
-              <span class="badge" [ngClass]="mat.nivel.toLowerCase()">
-                {{ mat.nivel.includes('_') ? mat.nivel.split('_')[1] : mat.nivel }}
-              </span>
-            </td>
-            <td class="text-left">
-              <i class="fas fa-file-pdf" style="color: #e74c3c; margin-right: 5px;"></i> 
-              {{ mat.materialReferencia }}
-            </td>
-            <td class="actions-cell">
-              <button class="btn-edit-small" (click)="baixarPDF(mat.idBinario, mat.materialReferencia)" title="Baixar Arquivo">
-                <i class="fas fa-download"></i>
-              </button> 
-              <button class="btn-delete-small" title="Excluir Vínculo">
-                <i class="fas fa-trash"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Controles de paginação -->
-      <div class="pagination-controls">
-        <button (click)="mudarPagina(false)" [disabled]="paginaAtual === 1">Anterior</button>
-        <span>Página <strong>{{ paginaAtual }}</strong> de {{ totalPaginas }}</span>
-        <button (click)="mudarPagina(true)" [disabled]="paginaAtual === totalPaginas">Próxima</button>
+      <div *ngIf="listaMateriaisFiltrada.length === 0" class="empty-state-container" style="text-align: center; padding: 40px; background: #f8f9fa; border: 1px dashed #ced4da; border-radius: 8px; margin-top: 15px;">
+        <i class="fas fa-file-pdf" style="font-size: 3rem; color: #adb5bd; margin-bottom: 15px;"></i>
+        <h3 style="color: #495057; margin-bottom: 10px;">Nenhum documento encontrado.</h3>
+        <p style="color: #6c757d; margin-bottom: 20px;">Você ainda não tem documentos cadastrados na base para este filtro. Insira novos documentos para começar a gerar questões.</p>
+        <button type="button" class="btn-insert" (click)="abrirModalContexto()">
+          <i class="fas fa-cloud-upload-alt"></i> Fazer Upload de PDF
+        </button>
       </div>
+
+      <ng-container *ngIf="listaMateriaisFiltrada.length > 0">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Tópico</th>
+              <th>Fonte</th>
+              <th>Material de Referência</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let mat of listaMateriaisPaginada">
+              <td class="font-weight-bold">{{ mat.topico }}</td>
+              <td><small>{{ mat.fonte }}</small></td>
+              <td class="text-left">
+                <i class="fas fa-file-pdf" style="color: #e74c3c; margin-right: 5px;"></i> 
+                {{ mat.materialReferencia }}
+              </td>
+              <td class="actions-cell">
+                <button class="btn-edit-small" (click)="baixarPDF(mat.idBinario, mat.materialReferencia)" title="Baixar Arquivo">
+                  <i class="fas fa-download"></i>
+                </button> 
+                <button class="btn-delete-small" title="Excluir Vínculo">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pagination-controls">
+          <button (click)="mudarPagina(false)" [disabled]="paginaAtual === 1">Anterior</button>
+          <span>Página <strong>{{ paginaAtual }}</strong> de {{ totalPaginas }}</span>
+          <button (click)="mudarPagina(true)" [disabled]="paginaAtual === totalPaginas">Próxima</button>
+        </div>
+      </ng-container>
     </div>
 
-    <!-- Modal de Visualização de Chunk -->
     <div class="modal-overlay" *ngIf="showChunkModal && chunkSelecionado" (click)="showChunkModal = false">
       <div class="modal-content prompt-modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
@@ -232,7 +238,6 @@
         </div>
         <div class="modal-body">
           <div class="chunk-meta-info">
-            <!-- Aqui usamos getParsedMeta(chunkSelecionado) para resolver o erro TS2532 -->
             <p><strong>Tópico:</strong> {{ getParsedMeta(chunkSelecionado).topico || 'Não informado' }}</p>
             <p><strong>Fonte:</strong> {{ getParsedMeta(chunkSelecionado).fonte || 'Não informada' }}</p>
             <p><strong>Arquivo Original:</strong> {{ getParsedMeta(chunkSelecionado).source || 'Desconhecido' }}</p>
@@ -248,7 +253,6 @@
     </div>
   </div>
 
-  <!-- Modal de Inserção de Cenário -->
   <div class="modal-overlay" *ngIf="showInsertModal" (click)="fecharModalInsercao()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header insert-header">
@@ -287,7 +291,6 @@
     </div>
   </div>
 
-  <!-- Modal de Deleção de Cenário -->
   <div class="modal-overlay" *ngIf="showDeleteModal" (click)="fecharModalDelecao()">
     <div class="modal-content delete-modal" (click)="$event.stopPropagation()">
       <div class="modal-header delete-header">
@@ -308,7 +311,6 @@
     </div>
   </div>
 
-  <!-- Modal de Edição de Cenário -->
   <div class="modal-overlay" *ngIf="showEditModal" (click)="fecharModalEdicao()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -340,7 +342,6 @@
     </div>
   </div>
 
-  <!-- Modal de Edição de Prompt -->
   <div class="modal-overlay" *ngIf="showPromptModal" (click)="showPromptModal = false">
     <div class="modal-content prompt-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -357,7 +358,6 @@
     </div>
   </div>
 
-  <!-- Modal de Inserção de Prompt -->
   <div class="modal-overlay" *ngIf="showInsertPromptModal" (click)="fecharModalInsercaoPrompt()">
     <div class="modal-content prompt-modal" (click)="$event.stopPropagation()">
       <div class="modal-header insert-header">
@@ -369,15 +369,6 @@
         <div class="form-group">
           <label>Tópico Principal:</label>
           <input type="text" formControlName="topico" placeholder="Ex: Camada de Aplicação">
-        </div>
-        <div class="form-group">
-          <label>Nível de Dificuldade:</label>
-          <select formControlName="nivel">
-            <option value="" disabled>Selecione...</option>
-            <option value="FACIL">Fácil</option>
-            <option value="MEDIO">Médio</option>
-            <option value="DIFICIL">Difícil</option>
-          </select>
         </div>
         <div class="form-group">
           <label>Corpo das Instruções (System Prompt):</label>
@@ -393,4 +384,56 @@
     </div>
   </div>
 
+
+  <div class="modal-backdrop" *ngIf="modalContextoAberta"></div>
+
+<div class="modal" *ngIf="modalContextoAberta" style="width: 700px; max-width: 95%;">
+  <div class="modal-header sticky-header">
+    <div class="header-info">
+      <h2>Cadastrar Documento</h2>
+    </div>
+    <div class="header-actions">
+      <button class="btn-fechar" (click)="fecharModalContexto()">✖</button>
+    </div>
+  </div>
+
+  <div class="modal-body">
+    <div class="form-group">
+      <label>Tópico de Contexto (*):</label>
+      <input [(ngModel)]="topico" placeholder="Ex: Camada Física, Camada de Aplicação">
+    </div>
+
+    <div class="form-group">
+      <label>Fonte (*):</label>
+      <input [(ngModel)]="fonteContexto" placeholder="Ex: Kurose & Ross - Capítulo 3...">
+    </div>
+
+    <div class="form-group" style="margin-top: 1.5rem; padding: 1rem; border: 1px dashed var(--cor-primaria); border-radius: 8px; background: #f8fafc;">
+      <label style="display: block; margin-bottom: 10px; font-weight: bold; color: var(--cor-primaria);">
+        Selecione o Material PDF (*):
+      </label>
+      <input type="file" id="fileContextoModal" (change)="onFileSelected($event, 'contexto')" accept=".pdf" hidden>
+      <label for="fileContextoModal" class="btn-selecionar" style="display: inline-block;">Procurar PDF no Computador</label>
+      
+      <div *ngIf="arquivoContexto" style="margin-top: 10px; color: var(--cor-sucesso); font-weight: bold;">
+        📄 Arquivo selecionado: {{ arquivoContexto.name }}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn-cancelar" (click)="fecharModalContexto()" [disabled]="isProcessingRag">Cancelar</button>
+    <button class="btn-finalizar-batch" (click)="iniciarUpload()" [disabled]="isProcessingRag">
+      <span *ngIf="!isProcessingRag">Salvar e Alimentar </span>
+      <div *ngIf="isProcessingRag" class="loader-container" style="display: flex; gap: 8px; align-items: center;">
+        <span class="loader-small"></span> Processando...
+      </div>
+    </button>
+  </div>
 </div>
+
+
+
+</div>
+

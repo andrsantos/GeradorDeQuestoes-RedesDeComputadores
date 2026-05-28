@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,6 +42,35 @@ public class ProvaSalvaController {
         this.provaRepository = provaRepository;
         this.pdfService = pdfService;
         this.questaoProvaRepository = questaoProvaRepository;
+    }
+
+    @PostMapping
+    public ResponseEntity<ProvaEntity> salvarProva(@RequestBody Prova provaDto) {
+        
+        ProvaEntity novaProva = new ProvaEntity();
+        
+        String titulo = "Prova Gerada - " + java.time.LocalDate.now().toString();
+        novaProva.setTitulo(titulo);
+
+        if (provaDto.getQuestoes() != null && !provaDto.getQuestoes().isEmpty()) {
+            
+            for (Questao questaoDto : provaDto.getQuestoes()) {
+                QuestaoProvaEntity questaoEntity = new QuestaoProvaEntity();
+                
+                questaoEntity.setEnunciado(questaoDto.getEnunciado());
+                questaoEntity.setAlternativas(questaoDto.getAlternativas());
+                questaoEntity.setRespostaCorreta(questaoDto.getRespostaCorreta());
+                questaoEntity.setComentarioTecnico(questaoDto.getComentarioTecnico());
+                
+                novaProva.addQuestao(questaoEntity); 
+            }
+        }
+
+        ProvaEntity provaSalva = provaRepository.save(novaProva);
+
+        System.out.println("CONTROLLER: Prova salva com sucesso! ID: " + provaSalva.getId());
+
+        return ResponseEntity.ok(provaSalva);
     }
 
     @GetMapping
@@ -119,7 +149,7 @@ public class ProvaSalvaController {
                         qe.getEnunciado(),
                         qe.getAlternativas(),
                         qe.getRespostaCorreta(),
-                        qe.getExplicacao()
+                        qe.getComentarioTecnico()
                 ))
                 .collect(Collectors.toList());
 

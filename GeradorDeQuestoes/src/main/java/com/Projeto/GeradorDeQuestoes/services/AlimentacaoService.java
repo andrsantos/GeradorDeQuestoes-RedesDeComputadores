@@ -28,6 +28,7 @@ public class AlimentacaoService {
     public void processarPdf(MultipartFile file, String topico) throws IOException {
         String textoCompleto = extrairTextoDePdf(file.getInputStream());
         
+        
         List<String> chunks = quebrarEmChunks(textoCompleto);
         
         System.out.println("Arquivo " + file.getOriginalFilename() + 

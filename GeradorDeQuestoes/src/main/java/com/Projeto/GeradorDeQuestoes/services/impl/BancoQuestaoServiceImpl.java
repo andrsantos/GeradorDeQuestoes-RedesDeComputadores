@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.springframework.stereotype.Service;
-
+import com.Projeto.GeradorDeQuestoes.dto.ConceitoConfigDTO;
 import com.Projeto.GeradorDeQuestoes.dto.GeracaoAutomaticaRequest;
 import com.Projeto.GeradorDeQuestoes.dto.QuestaoDTO;
 import com.Projeto.GeradorDeQuestoes.enums.NivelTecnico;
@@ -72,56 +70,90 @@ public class BancoQuestaoServiceImpl implements BancoQuestaoService {
                 .toList(); 
     }
 
-    @Override
-    public List<QuestaoDTO> gerarQuestoesParaProva(GeracaoAutomaticaRequest request) {
+    public List<QuestaoDTO> listaQuestoesPorConceito(String conceito){
 
+            return bancoQuestaoRepository.findByConceito(conceito).stream()
+                    .map(entity -> new QuestaoDTO(
+                        entity.getId().toString(),
+                        entity.getEnunciado(),
+                        entity.getAlternativas(),
+                        entity.getRespostaCorreta(),
+                        entity.getConceito(),
+                        entity.getCompetencia(),
+                        entity.getComentarioTecnico(),
+                        entity.getNivel()
+            ))
+            .toList(); 
+    }
+
+
+   @Override
+    public List<QuestaoDTO> gerarQuestoesParaProva(GeracaoAutomaticaRequest request) {
 
         List<QuestaoDTO> questoesGeradas = new ArrayList<>();
 
-       for(int i = 0; i < request.getTopicos().size(); i++){
-            String topico = request.getTopicos().get(i).getTopico();
-            int quantidadeFaceis = request.getTopicos().get(i).getQuantidadeFaceis();
-            int quantidadeMedias = request.getTopicos().get(i).getQuantidadeMedias();
-            int quantidadeDificeis = request.getTopicos().get(i).getQuantidadeDificeis();
+        for (int i = 0; i < request.getTopicos().size(); i++) {
+            var topicoRequest = request.getTopicos().get(i);
+            String topico = topicoRequest.getTopico();
 
-        List<QuestaoDTO> questoesPorTopico = listarQuestoesPorTopico(topico);
+            List<QuestaoDTO> questoesPorTopico = listarQuestoesPorTopico(topico);
 
-         List<QuestaoDTO> todasFaceis = questoesPorTopico.stream()
-         .filter(q -> q.getNivel().equals(NivelTecnico.UNIVERSITARIO_INICIANTE))
-         .collect(Collectors.toCollection(ArrayList::new));
-         Collections.shuffle(todasFaceis);
-         List<QuestaoDTO> questoesFaceis = todasFaceis.stream()
-                 .limit(quantidadeFaceis)
-                 .toList();
+            if (questoesPorTopico.isEmpty()) {
+                throw new IllegalArgumentException("Não existem questões para o tópico: " + topico + " cadastradas no banco.");
+            }
 
-         List<QuestaoDTO> todasMedias = questoesPorTopico.stream()
-         .filter(q -> q.getNivel().equals(NivelTecnico.UNIVERSITARIO_INTERMEDIARIO))
-         .collect(Collectors.toCollection(ArrayList::new));
-         Collections.shuffle(todasMedias);
-         List<QuestaoDTO> questoesMedias = todasMedias.stream()
-                 .limit(quantidadeMedias)
-                 .toList();
+            for (int j = 0; j < topicoRequest.getSubtopicos().size(); j++) {
+                ConceitoConfigDTO conceito = topicoRequest.getSubtopicos().get(j);
 
+                int quantidadeFaceis = conceito.getQuantidadeFaceis();
+                int quantidadeMedias = conceito.getQuantidadeMedias();
+                int quantidadeDificeis = conceito.getQuantidadeDificeis();
+                int quantidadeTotalConceito = quantidadeFaceis + quantidadeMedias + quantidadeDificeis;
 
-         List<QuestaoDTO> todasDificeis = questoesPorTopico.stream()
-         .filter(q -> q.getNivel().equals(NivelTecnico.UNIVERSITARIO_AVANCADO))
-         .collect(Collectors.toCollection(ArrayList::new));
-         Collections.shuffle(todasDificeis);
-         List<QuestaoDTO> questoesDificeis = todasDificeis.stream()
-                 .limit(quantidadeDificeis)
-                 .toList();
-        
+                if (quantidadeTotalConceito == 0) continue;
 
-        List<QuestaoDTO> questoesSelecionadas = Stream.of(questoesFaceis, questoesMedias, questoesDificeis)
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
+                List<QuestaoDTO> questoesPorConceito = questoesPorTopico.stream()
+                        .filter(q -> q.getConceito() != null && q.getConceito().equalsIgnoreCase(conceito.getConceito()))
+                        .collect(Collectors.toCollection(ArrayList::new));
 
-        questoesGeradas.addAll(questoesSelecionadas);
+                if (quantidadeFaceis > 0) {
+                    List<QuestaoDTO> faceisDisponiveis = questoesPorConceito.stream()
+                            .filter(q -> q.getNivel().equals(NivelTecnico.UNIVERSITARIO_INICIANTE))
+                            .collect(Collectors.toList());
 
+                    if (faceisDisponiveis.size() < quantidadeFaceis) {
+                        throw new IllegalArgumentException("Não existem questões de nível FÁCIL suficientes para o conceito '" + conceito.getConceito() + "'. Cadastre mais questões correspondentes.");
+                    }
+                    Collections.shuffle(faceisDisponiveis);
+                    questoesGeradas.addAll(faceisDisponiveis.stream().limit(quantidadeFaceis).toList());
+                }
+
+                if (quantidadeMedias > 0) {
+                    List<QuestaoDTO> mediasDisponiveis = questoesPorConceito.stream()
+                            .filter(q -> q.getNivel().equals(NivelTecnico.UNIVERSITARIO_INTERMEDIARIO))
+                            .collect(Collectors.toList());
+
+                    if (mediasDisponiveis.size() < quantidadeMedias) {
+                        throw new IllegalArgumentException("Não existem questões de nível MÉDIO suficientes para o conceito '" + conceito.getConceito() + "'. Cadastre mais questões correspondentes.");
+                    }
+                    Collections.shuffle(mediasDisponiveis);
+                    questoesGeradas.addAll(mediasDisponiveis.stream().limit(quantidadeMedias).toList());
+                }
+
+                if (quantidadeDificeis > 0) {
+                    List<QuestaoDTO> dificeisDisponiveis = questoesPorConceito.stream()
+                            .filter(q -> q.getNivel().equals(NivelTecnico.UNIVERSITARIO_AVANCADO))
+                            .collect(Collectors.toList());
+
+                    if (dificeisDisponiveis.size() < quantidadeDificeis) {
+                        throw new IllegalArgumentException("Não existem questões de nível DIFÍCIL suficientes para o conceito '" + conceito.getConceito() + "'. Cadastre mais questões correspondentes.");
+                    }
+                    Collections.shuffle(dificeisDisponiveis);
+                    questoesGeradas.addAll(dificeisDisponiveis.stream().limit(quantidadeDificeis).toList());
+                }
+            }
         }
+
         return questoesGeradas;
     }
-
-    
-    
 }

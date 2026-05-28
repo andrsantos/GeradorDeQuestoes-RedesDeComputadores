@@ -3,6 +3,5 @@ export interface DocumentoExibicao {
   idBinario: string;
   topico: string;
   fonte: string;
-  nivel: string;
   materialReferencia: string;
 }

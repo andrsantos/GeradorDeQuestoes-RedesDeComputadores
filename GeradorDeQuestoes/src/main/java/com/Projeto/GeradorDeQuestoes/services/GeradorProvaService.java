@@ -5,7 +5,6 @@ import com.Projeto.GeradorDeQuestoes.dto.GerarQuestaoRequest;
 import com.Projeto.GeradorDeQuestoes.dto.ListaQuestoes;
 import com.Projeto.GeradorDeQuestoes.dto.Prova;
 import com.Projeto.GeradorDeQuestoes.dto.Questao;
-import com.Projeto.GeradorDeQuestoes.dto.TopicoQuantidade;
 import com.Projeto.GeradorDeQuestoes.entities.ProvaEntity;
 import com.Projeto.GeradorDeQuestoes.entities.QuestaoProvaEntity;
 import com.Projeto.GeradorDeQuestoes.repositories.ProvaRepository;
@@ -15,11 +14,9 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -120,31 +117,18 @@ public class GeradorProvaService {
         return pdfBytes;
     }
 
-    public Prova adicionarQuestoesAutomatico(UUID idProva, GeracaoAutomaticaRequest request) {
+   public Prova adicionarQuestoesAutomatico(UUID idProva, GeracaoAutomaticaRequest request) {
         
         Prova prova = getProva(idProva);
         if (prova == null) {
             throw new RuntimeException("Prova não encontrada!");
         }
 
-        Set<String> topicosProcessados = new HashSet<>();
+        GerarQuestaoRequest ragRequest = new GerarQuestaoRequest(request.getTopicos());
+        
+        ListaQuestoes novasQuestoes = questaoService.gerarQuestoes(ragRequest);
 
-        for (TopicoQuantidade tp : request.getTopicos()) {
-            
-            if (topicosProcessados.contains(tp.getTopico())) {
-                System.out.println("SERVICE: Tópico duplicado ignorado: " + tp.getTopico());
-                continue;
-            }
-            
-            topicosProcessados.add(tp.getTopico());
-
-            GerarQuestaoRequest ragRequest = new GerarQuestaoRequest(tp.getTopico(), tp.getQuantidade(), 
-            tp.getQuantidadeDificeis(), tp.getQuantidadeMedias(), tp.getQuantidadeFaceis());
-            
-            ListaQuestoes novasQuestoes = questaoService.gerarQuestoes(ragRequest);
-
-
-            novasQuestoes.questoes().forEach(questao -> {
+        novasQuestoes.questoes().forEach(questao -> {
 
             String letraCorretaOriginal = questao.getRespostaCorreta().toLowerCase();
             String textoCorreto = questao.getAlternativas().get(letraCorretaOriginal);
@@ -172,15 +156,11 @@ public class GeradorProvaService {
 
             System.out.println("--- Questão Randomizada ---");
             System.out.println("Nova correta: " + questao.getRespostaCorreta());
-            System.out.println("Novas alternativas: " + questao.getAlternativas());
- 
-            });
             
-            novasQuestoes.questoes().forEach(prova::adicionarQuestao);
-            
-            System.out.println("SERVICE: Adicionadas " + novasQuestoes.questoes().size() 
-                             + " questões do tópico '" + tp.getTopico() + "' à prova " + idProva);
-        }
+            prova.adicionarQuestao(questao);
+        });
+        
+        System.out.println("SERVICE: Adicionadas " + novasQuestoes.questoes().size() + " questões à prova " + idProva);
         
         return prova;
     }

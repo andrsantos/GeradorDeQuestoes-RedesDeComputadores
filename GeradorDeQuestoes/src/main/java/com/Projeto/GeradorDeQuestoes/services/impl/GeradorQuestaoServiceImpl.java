@@ -4,12 +4,16 @@ import com.Projeto.GeradorDeQuestoes.dto.AvaliacaoQuestao;
 import com.Projeto.GeradorDeQuestoes.dto.GerarQuestaoRequest;
 import com.Projeto.GeradorDeQuestoes.dto.ListaQuestoes;
 import com.Projeto.GeradorDeQuestoes.dto.Questao;
+import com.Projeto.GeradorDeQuestoes.dto.TopicoQuantidade;
 import com.Projeto.GeradorDeQuestoes.entities.CenarioConfigEntity;
 import com.Projeto.GeradorDeQuestoes.entities.TopicoConfigEntity;
+import com.Projeto.GeradorDeQuestoes.enums.NivelTecnico;
 import com.Projeto.GeradorDeQuestoes.repositories.CenarioConfigRepository;
 import com.Projeto.GeradorDeQuestoes.repositories.TopicoConfigRepository;
 import com.Projeto.GeradorDeQuestoes.services.GeradorQuestaoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.EntityNotFoundException;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.ChatOptions;
@@ -17,6 +21,7 @@ import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -48,93 +53,178 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
             this.cenarioConfigRepository = cenarioConfigRepository;
     }
 
-    @Override
+@Override
     public ListaQuestoes gerarQuestoes(GerarQuestaoRequest request) {
         List<Questao> todasAsQuestoes = new ArrayList<>();
-        if (request.quantidadeFaceis() > 0) todasAsQuestoes.addAll(gerarBlocoPorNivel(request.topico(), "FACIL", request.quantidadeFaceis()));
-        if (request.quantidadeMedias() > 0) todasAsQuestoes.addAll(gerarBlocoPorNivel(request.topico(), "MEDIO", request.quantidadeMedias()));
-        if (request.quantidadeDificeis() > 0) todasAsQuestoes.addAll(gerarBlocoPorNivel(request.topico(), "DIFICIL", request.quantidadeDificeis()));
+
+        if (request.topicos() == null || request.topicos().isEmpty()) {
+            System.err.println("Aviso: Requisição de geração de questões chegou vazia.");
+            return new ListaQuestoes(todasAsQuestoes);
+        }
+
+        for (TopicoQuantidade bloco : request.topicos()) {
+            
+            System.out.println("Processando bloco de geração para o assunto: " + bloco.getTopico() + 
+                               " | Subtópicos: " + bloco.getSubtopicos());
+
+            if (bloco.getQuantidadeFaceis() > 0) {
+                todasAsQuestoes.addAll(gerarBlocoPorNivel(bloco, "FACIL", bloco.getQuantidadeFaceis()));
+            }
+            if (bloco.getQuantidadeMedias() > 0) {
+                todasAsQuestoes.addAll(gerarBlocoPorNivel(bloco, "MEDIO", bloco.getQuantidadeMedias()));
+            }
+            if (bloco.getQuantidadeDificeis() > 0) {
+                todasAsQuestoes.addAll(gerarBlocoPorNivel(bloco, "DIFICIL", bloco.getQuantidadeDificeis()));
+            }
+        }
+
+        System.out.println("Geração concluída. Total de questões geradas: " + todasAsQuestoes.size());
         return new ListaQuestoes(todasAsQuestoes);
     }
 
-    private List<Questao> gerarBlocoPorNivel(String nomeTopico, String nivel, int quantidadeSolicitada) {
-    List<Questao> blocoFinal = new ArrayList<>();
-    Random random = new Random();
-    TopicoConfigEntity config = topicoConfigRepository.findByTopicoAndNivel(nomeTopico, nivel)
-            .orElseThrow(() -> new RuntimeException("Configuração não encontrada"));
+    private List<Questao> gerarBlocoPorNivel(TopicoQuantidade configTopico, String nivel, int quantidadeSolicitada) {
+            List<Questao> blocoFinal = new ArrayList<>();
+            String nomeTopico = configTopico.getTopico();
+        
+            TopicoConfigEntity config = topicoConfigRepository.findByTopicoAndNivel(nomeTopico, nivel)
+                .or(() -> topicoConfigRepository.findByTopicoAndNivel("Padrao", nivel))
+                .orElseThrow(() -> new EntityNotFoundException(
+                    "Erro Crítico: Não foi encontrado o prompt para o tópico '" + nomeTopico + 
+                    "' e o prompt 'Padrao' também não está cadastrado para o nível " + nivel + "."));
 
-    String contextoTecnico = recuperarContextoDoBanco(nomeTopico);
-    List<String> conceitosParaUsar = extrairConceitosUnicos(contextoTecnico, nivel, 20);
-    Collections.shuffle(conceitosParaUsar, random);
+            List<String> listaContextos = cenarioConfigRepository.findByTopicoAndNivel(nomeTopico, nivel).stream()
+                    .map(CenarioConfigEntity::getDescricao).collect(Collectors.toList());
+            if (listaContextos.isEmpty()) listaContextos = List.of("Cenário de rede corporativa");
 
-    List<String> listaContextos = cenarioConfigRepository.findByTopicoAndNivel(nomeTopico, nivel).stream()
-            .map(CenarioConfigEntity::getDescricao).collect(Collectors.toList());
-    if (listaContextos.isEmpty()) listaContextos = List.of("Cenário de rede corporativa");
+            boolean buscaGeral = configTopico.getSubtopicos() == null || configTopico.getSubtopicos().isEmpty();
+            
+            List<String> conceitos = new ArrayList<>();
 
-    int tentativaConceito = 0;
+            configTopico.getSubtopicos().forEach(subtopico -> {
+                conceitos.add(subtopico.getConceito());
+            });
 
-    while (blocoFinal.size() < quantidadeSolicitada && tentativaConceito < conceitosParaUsar.size()) {
-        String conceitoAtual = conceitosParaUsar.get(tentativaConceito);
-        String contextoDoConceito = recuperarContextoDoBanco(conceitoAtual);
-        Questao questaoFinal = null;
-        int subTentativas = 0;
-        String questaoRaw = null;
+            List<String> conceitosParaIterar = buscaGeral ? List.of("") : conceitos;
 
-        while (questaoFinal == null && subTentativas < 3) {
-            try {
-                if (questaoRaw == null) {
-                    System.out.println("Gerando questão para conceito: " + conceitoAtual);
-                    questaoRaw = chamarAgenteEscritor(nomeTopico, nivel, contextoDoConceito, config, conceitoAtual);
-                    System.out.println("DEBUG: Questão gerada: " + questaoRaw);
-                }
+            int tentativaConceito = 0;
+            int maxTentativas = conceitosParaIterar.size() * 2; 
 
-                List<Questao> listaRascunho = parsearRespostaTags(questaoRaw);
-                if (listaRascunho.isEmpty()) {
-                    System.err.println("Parser não extraiu questão válida. Tentativa: " + (subTentativas + 1));
-                    questaoRaw = null; 
-                    subTentativas++;
+            while (blocoFinal.size() < quantidadeSolicitada && tentativaConceito < maxTentativas) {
+                
+                String conceitoAtual = conceitosParaIterar.get(tentativaConceito % conceitosParaIterar.size());
+                
+                String contextoDoConceito = recuperarContextoDoBanco(nomeTopico, conceitoAtual);
+
+                if (contextoDoConceito.isBlank()) {
+                    tentativaConceito++;
                     continue;
                 }
 
-                Questao rascunho = listaRascunho.get(0);
-                System.out.println("Contextualizando questão para conceito: " + conceitoAtual);
-                String questaoContextualizadaRaw = chamarAgenteContextualizador(rascunho, conceitoAtual);
-                System.out.println("DEBUG: Questão contextualizada: " + questaoContextualizadaRaw);
+                Questao questaoFinal = null;
+                int subTentativas = 0;
+                String questaoRaw = null;
+                
+                String conceitoDeExibicao = buscaGeral ? "Geral (" + nomeTopico + ")" : conceitoAtual;
 
-                List<Questao> listaFinal = parsearRespostaTags(questaoContextualizadaRaw);
-                if (!listaFinal.isEmpty()) {
-                    questaoFinal = listaFinal.get(0);
-                } else {
-                    System.err.println("Parser falhou na contextualização. Tentativa: " + (subTentativas + 1));
+                while (questaoFinal == null && subTentativas < 3) {
+                    try {
+                        if (questaoRaw == null) {
+                            System.out.println("Gerando questão para conceito: " + conceitoDeExibicao);
+                            questaoRaw = chamarAgenteEscritor(nomeTopico, nivel, contextoDoConceito, config, conceitoDeExibicao);
+                        }
+
+                        List<Questao> listaRascunho = parsearRespostaTags(questaoRaw);
+                        if (listaRascunho.isEmpty()) {
+                            questaoRaw = null; 
+                            subTentativas++;
+                            continue;
+                        }
+
+                        Questao rascunho = listaRascunho.get(0);
+                        
+                        String instrucoesDeEstilo = config.getInstrucoesEspecificas(); 
+                        String questaoContextualizadaRaw = chamarAgenteContextualizador(rascunho, conceitoDeExibicao, instrucoesDeEstilo);
+                        
+                        List<Questao> listaFinal = parsearRespostaTags(questaoContextualizadaRaw);
+                        if (!listaFinal.isEmpty()) {
+                            questaoFinal = listaFinal.get(0);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Erro na geração [" + conceitoDeExibicao + "]: " + e.getMessage());
+                    }
+                    subTentativas++;
                 }
 
-            } catch (Exception e) {
-                System.err.println("Erro na geração [" + conceitoAtual + "]: " + e.getMessage());
+                if (questaoFinal != null) {
+                    questaoFinal = chamarAgenteJulgador(questaoFinal);
+                    questaoFinal.setConceito(conceitoDeExibicao); 
+                    
+                    AvaliacaoQuestao avaliacao = chamarAgenteAvaliador(questaoFinal);
+                    questaoFinal.setCompetencia(avaliacao.getCompetencia());
+                    questaoFinal.setComentarioTecnico(avaliacao.getComentarioTecnico());
+                    questaoFinal.setTopico(nomeTopico);
+                    questaoFinal.setNivel(converterDeStringParaNivelTecnico(nivel));
+
+                    
+                    blocoFinal.add(questaoFinal);
+                    System.out.println("Progresso: " + blocoFinal.size() + "/" + quantidadeSolicitada);
+                }
+
+                tentativaConceito++;
             }
-            subTentativas++;
+            return blocoFinal;
         }
 
-        if (questaoFinal != null) {
-            questaoFinal = chamarAgenteJulgador(questaoFinal);
-            questaoFinal.setConceito(conceitoAtual);
-            AvaliacaoQuestao avaliacao = chamarAgenteAvaliador(questaoFinal);
-            System.out.println("Competência avaliada: " + avaliacao.getCompetencia());
-            System.out.println("Comentário técnico: " + avaliacao.getComentarioTecnico());
-            questaoFinal.setCompetencia(avaliacao.getCompetencia());
-            questaoFinal.setComentarioTecnico(avaliacao.getComentarioTecnico());
-            questaoFinal.setTopico(nomeTopico);
-            blocoFinal.add(questaoFinal);
-            System.out.println("Progresso: " + blocoFinal.size() + "/" + quantidadeSolicitada);
+    private NivelTecnico converterDeStringParaNivelTecnico(String nivel){
+     if(nivel.equals("FACIL")){
+      return NivelTecnico.UNIVERSITARIO_INICIANTE;
+     }
+     if(nivel.equals("MEDIO")){
+      return NivelTecnico.UNIVERSITARIO_INTERMEDIARIO;
+     } else {
+      return NivelTecnico.UNIVERSITARIO_AVANCADO;
+     }
+    }
+
+    private String recuperarContextoDoBanco(String topico, String conceitoEspecífico) {
+            FilterExpressionBuilder b = new FilterExpressionBuilder();
+
+            SearchRequest sr;
+            
+            if (conceitoEspecífico == null || conceitoEspecífico.isBlank()) {
+                sr = SearchRequest.builder()
+                        .query("Questão sobre " + topico)
+                        .filterExpression(b.eq("topico", topico).build())
+                        .topK(5)
+                        .build();
+                System.out.println("Busca Vetorial: ABRANGENTE para tópico [" + topico + "]");
+            } else {
+                sr = SearchRequest.builder()
+                        .query("Explicação sobre " + conceitoEspecífico)
+                        .filterExpression(b.and(
+                            b.eq("topico", topico),
+                            b.in("conceitos", conceitoEspecífico)
+                        ).build())
+                        .topK(3) // Menos chunks, porém absurdamente focados
+                        .build();
+                System.out.println("Busca Vetorial: CIRÚRGICA para conceito [" + conceitoEspecífico + "] em [" + topico + "]");
+            }
+
+            List<Document> documentos = this.vectorStore.similaritySearch(sr);
+
+            if (documentos.isEmpty()) {
+                System.err.println("Aviso: Nenhum contexto encontrado no pgvector para: " + (conceitoEspecífico.isBlank() ? topico : conceitoEspecífico));
+                return "";
+            }
+
+            return documentos.stream()
+                    .map(Document::getText)
+                    .collect(Collectors.joining("\n---\n"));
         }
-
-        if (blocoFinal.size() >= quantidadeSolicitada) break;
-        tentativaConceito++;
-    }
-    return blocoFinal;
-    }
-
-    private List<String> extrairConceitosUnicos(String contexto, String nivel, int qtd) {
-        String prompt = "Liste exatamente %d conceitos técnicos distintos (ex: Protocolo, Atraso de Fila) de %s baseados no material: %s. Separe os itens obrigatoriamente por VÍRGULA.".formatted(qtd, nivel, contexto);
+    
+    @Override
+    public List<String> extrairConceitosUnicos(String contexto, int qtd) {
+        String prompt = "Liste exatamente %d conceitos técnicos distintos (ex: Protocolo, Atraso de Fila) baseados no material: %s. Separe os itens obrigatoriamente por VÍRGULA.".formatted(qtd, contexto);
         String r = this.openAiChatClient.prompt(prompt).options(ChatOptions.builder().temperature(0.7).build()).call().content();
         
         String[] partes = r.split(",|\\n|\\r|\\d+\\.");
@@ -224,76 +314,163 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
     }
 
     private String chamarAgenteEscritor(String topico, String nivel, String contexto, TopicoConfigEntity config, String conceito) {
-        PromptTemplate template = new PromptTemplate(config.getInstrucoesEspecificas());
+        
+        String templateBase = """
+            Você é um especialista técnico avaliador.
+            Gere UMA questão de múltipla escolha com base EXCLUSIVAMENTE no contexto fornecido abaixo.
+            Não invente informações que não estejam no contexto.
+
+            ### PARÂMETROS DO SISTEMA ###
+            - Conceito central: {conceito}
+            - Nível de dificuldade: {nivel}
+            - Tópico principal: {topico}
+
+            ### CONTEXTO FONTE (Use apenas este material) ###
+            {contexto}
+
+            ### FORMATO DE SAÍDA OBRIGATÓRIO (Não adicione nenhum texto extra) ###
+            [ENUNCIADO]
+            <texto do enunciado objetivo e direto>
+            [/ENUNCIADO]
+            [A] <alternativa A>
+            [B] <alternativa B>
+            [C] <alternativa C>
+            [D] <alternativa D>
+            [E] <alternativa E>
+            [RESPOSTA] <apenas a letra: a, b, c, d ou e>
+            [EXPLICACAO]
+            <explicação detalhada>
+            [/EXPLICACAO]
+            """;
+
+        PromptTemplate template = new PromptTemplate(templateBase);
+        
         Map<String, Object> params = Map.of(
             "nivel", nivel, 
             "topico", topico, 
             "contexto", contexto, 
-            "conceito", conceito        
+            "conceito", conceito
         );
 
-
         return this.openAiChatClient.prompt(template.render(params))
-                .options(ChatOptions.builder().temperature(0.8).build()) 
+                .options(ChatOptions.builder().temperature(0.5).build()) 
                 .call()
                 .content();
     }
 
-   private String chamarAgenteContextualizador(Questao questao, String conceito) {
-    System.out.println("Contextualizando questão para conceito: " + conceito);
+    private String chamarAgenteContextualizador(Questao questao, String conceito, String regrasDeEstiloDoBanco) {
+        System.out.println("Contextualizando questão para conceito: " + conceito);
 
-    String alternativasFormatadas = questao.getAlternativas().entrySet().stream()
-            .map(e -> "[" + e.getKey().toUpperCase() + "] " + e.getValue())
-            .collect(Collectors.joining("\n"));
+        String alternativasFormatadas = questao.getAlternativas().entrySet().stream()
+                .map(e -> "[" + e.getKey().toUpperCase() + "] " + e.getValue())
+                .collect(Collectors.joining("\n"));
 
-    String prompt = """
-        Você é um especialista em elaboração de questões de concurso público na área de redes de computadores.
+        
+        String regrasFinais = regrasDeEstiloDoBanco + """
+                
+                
+                ### REGRAS DE SEGURANÇA (OBRIGATÓRIO) ###
+                - As alternativas NÃO devem ser alteradas — apenas o enunciado muda.
+                - O conceito testado e a resposta correta devem permanecer exatamente os mesmos.
+                """;
 
-        Sua tarefa é reescrever a questão abaixo em formato contextualizado,
-        no estilo de bancas como FGV, CESPE e FCC.
+        String prompt = """
+            Você é um especialista em elaboração de questões de concurso público na área de redes de computadores.
 
-        ### QUESTÃO ORIGINAL ###
-        Enunciado: %s
-        Alternativas:
-        %s
-        Resposta correta: %s
-        Conceito testado: %s
+            Sua tarefa é reescrever a questão abaixo em formato contextualizado.
 
-        ### REGRAS ###
-        1. Crie um contexto narrativo realista (empresa, cenário técnico, situação-problema) usando entre 130 e 150 palavras.
-        2. A pergunta deve fluir naturalmente do contexto — não use "Com base no texto acima".
-        3. As alternativas NÃO devem ser alteradas — apenas o enunciado muda.
-        4. O conceito testado deve permanecer exatamente o mesmo.
-        5. O contexto deve ser técnico e denso, mas compreensível.
-        6. Termine com uma pergunta direta e objetiva, sem "Qual das alternativas abaixo".
-        7. Prefira contextos do mundo real: data centers, ISPs, redes corporativas, IoT,
-           telecomunicações, etc.
+            ### QUESTÃO ORIGINAL ###
+            Enunciado: %s
+            Alternativas:
+            %s
+            Resposta correta: %s
+            Conceito testado: %s
 
-        ### FORMATO DE SAÍDA (siga exatamente, sem texto adicional) ###
-        [ENUNCIADO]
-        <narrativa + pergunta>
-        [/ENUNCIADO]
-        [A] <alternativa A original>
-        [B] <alternativa B original>
-        [C] <alternativa C original>
-        [D] <alternativa D original>
-        [E] <alternativa E original>
-        [RESPOSTA] <letra original>
-        [EXPLICACAO]
-        <explicação original>
-        [/EXPLICACAO]
-        """.formatted(
-            questao.getEnunciado(),
-            alternativasFormatadas,
-            questao.getRespostaCorreta().toUpperCase(),
-            conceito
+            ### REGRAS ESTILÍSTICAS ###
+            %s
+
+            ### FORMATO DE SAÍDA (siga exatamente, sem texto adicional) ###
+            [ENUNCIADO]
+            <narrativa + pergunta>
+            [/ENUNCIADO]
+            [A] <alternativa A original>
+            [B] <alternativa B original>
+            [C] <alternativa C original>
+            [D] <alternativa D original>
+            [E] <alternativa E original>
+            [RESPOSTA] <letra original>
+            [EXPLICACAO]
+            <explicação original>
+            [/EXPLICACAO]
+            """.formatted(
+                questao.getEnunciado(),
+                alternativasFormatadas,
+                questao.getRespostaCorreta().toUpperCase(),
+                conceito,
+                regrasFinais 
         );
 
-    return this.openAiChatClient.prompt(prompt)
-            .options(ChatOptions.builder().temperature(0.4).build())
-            .call()
-            .content();
+        return this.openAiChatClient.prompt(prompt)
+                .options(ChatOptions.builder().temperature(0.4).build())
+                .call()
+                .content();
     }
+
+//    private String chamarAgenteContextualizador(Questao questao, String conceito) {
+//     System.out.println("Contextualizando questão para conceito: " + conceito);
+
+//     String alternativasFormatadas = questao.getAlternativas().entrySet().stream()
+//             .map(e -> "[" + e.getKey().toUpperCase() + "] " + e.getValue())
+//             .collect(Collectors.joining("\n"));
+
+//     String prompt = """
+//         Você é um especialista em elaboração de questões de concurso público na área de redes de computadores.
+
+//         Sua tarefa é reescrever a questão abaixo em formato contextualizado,
+//         no estilo de bancas como FGV, CESPE e FCC.
+
+//         ### QUESTÃO ORIGINAL ###
+//         Enunciado: %s
+//         Alternativas:
+//         %s
+//         Resposta correta: %s
+//         Conceito testado: %s
+
+//         ### REGRAS ###
+//         1. Crie um contexto narrativo realista (empresa, cenário técnico, situação-problema) usando entre 130 e 150 palavras.
+//         2. A pergunta deve fluir naturalmente do contexto — não use "Com base no texto acima".
+//         3. As alternativas NÃO devem ser alteradas — apenas o enunciado muda.
+//         4. O conceito testado deve permanecer exatamente o mesmo.
+//         5. O contexto deve ser técnico e denso, mas compreensível.
+//         6. Termine com uma pergunta direta e objetiva, sem "Qual das alternativas abaixo".
+//         7. Prefira contextos do mundo real: data centers, ISPs, redes corporativas, IoT,
+//            telecomunicações, etc.
+
+//         ### FORMATO DE SAÍDA (siga exatamente, sem texto adicional) ###
+//         [ENUNCIADO]
+//         <narrativa + pergunta>
+//         [/ENUNCIADO]
+//         [A] <alternativa A original>
+//         [B] <alternativa B original>
+//         [C] <alternativa C original>
+//         [D] <alternativa D original>
+//         [E] <alternativa E original>
+//         [RESPOSTA] <letra original>
+//         [EXPLICACAO]
+//         <explicação original>
+//         [/EXPLICACAO]
+//         """.formatted(
+//             questao.getEnunciado(),
+//             alternativasFormatadas,
+//             questao.getRespostaCorreta().toUpperCase(),
+//             conceito
+//         );
+
+//     return this.openAiChatClient.prompt(prompt)
+//             .options(ChatOptions.builder().temperature(0.4).build())
+//             .call()
+//             .content();
+//     }
 
     private Questao chamarAgenteJulgador(Questao questao) {
 
@@ -436,27 +613,5 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
     //     return this.vectorStore.similaritySearch(sr).stream().map(Document::getText).collect(Collectors.joining("\n"));
     // }
 
-    private String recuperarContextoDoBanco(String conceito) {
-    
-    String queryEnriquecida = "Redes de Computadores Kurose %s".formatted(conceito);
 
-    SearchRequest sr = SearchRequest.builder()
-            .query(queryEnriquecida)
-            .topK(4) 
-            .build();
-
-    List<Document> documentos = this.vectorStore.similaritySearch(sr);
-
-    if (documentos.isEmpty()) {
-        System.err.println("Nenhum contexto encontrado para: " + conceito);
-        return "";
-    }
-
-    System.out.println("Contexto recuperado para [" + conceito + "]: "
-            + documentos.size() + " chunks");
-
-    return documentos.stream()
-            .map(Document::getText)
-            .collect(Collectors.joining("\n---\n")); 
-    }
 }

@@ -1,66 +1,87 @@
 <div class="container">
-  
+
   <header>
-    <h1>Gerador de Prova (Modo Automático)</h1>
-    <p class="subtitle" *ngIf="provaId">ID da Prova Ativa: {{ provaId }}</p>
-    <p class="subtitle" *ngIf="!provaId">Criando sessão de prova...</p>
+    <h1>Gerador de Prova (Modo Banco de Questões)</h1>
   </header>
 
   <div class="form-secao">
-    <h3>1. Selecione os Tópicos</h3>
-    
-    <!-- MULTI-SELECT CUSTOMIZADO -->
-    <div class="custom-select-wrapper">
-      
-      <!-- O Gatilho -->
-      <div class="select-trigger" (click)="toggleDropdown()">
-        <span *ngIf="topicosSelecionados.length === 0">Clique para selecionar tópicos...</span>
-        <span *ngIf="topicosSelecionados.length > 0">
-          {{ topicosSelecionados.length }} tópico(s) selecionado(s)
-        </span>
-        <span class="arrow" [class.open]="isDropdownOpen">▼</span>
-      </div>
+    <h3>1. Configurar Filtros da Prova</h3>
 
-      <!-- O Menu Flutuante (Lista de Checkboxes) -->
-      <div class="select-dropdown" *ngIf="isDropdownOpen">
-        <div *ngIf="topicosDisponiveis.length === 0" class="dropdown-loading">
-          Carregando tópicos...
-        </div>
-
-        <label *ngFor="let topico of topicosDisponiveis" class="dropdown-item">
-          <input 
-            type="checkbox" 
-            [checked]="isTopicoSelecionado(topico)"
-            (change)="onToggleTopico(topico, $event)"
-          >
-          {{ topico }}
-        </label>
-      </div>
-
-      <!-- Backdrop para fechar ao clicar fora -->
-      <div 
-        class="select-backdrop" 
-        *ngIf="isDropdownOpen" 
-        (click)="toggleDropdown()">
-      </div>
+    <div class="alert-warning-empty" *ngIf="assuntosDisponiveis.length === 0">
+      <i class="fas fa-exclamation-triangle"></i>
+      Você ainda não tem tópicos cadastrados na base de dados. Para gerar questões, vá até a tela de Gerenciamento e cadastre um novo documento.
     </div>
 
-    <!-- Resumo da Lista -->
-    <div class="lista-resumo-container">
-      <strong>Lista: </strong> 
+    <div class="qconcursos-filter-bar">
+
+      <div class="form-group-filter">
+        <label>Assunto (Disciplina/Capítulo)</label>
+        <select class="form-control-inline-select" [(ngModel)]="assuntoSelecionadoCombo" (change)="onAssuntoChange()" [disabled]="assuntosDisponiveis.length === 0">
+          <option value="" disabled selected>Selecione um assunto...</option>
+          <option *ngFor="let assunto of assuntosDisponiveis" [value]="assunto">{{ assunto }}</option>
+        </select>
+      </div>
+
+      <div class="form-group-filter custom-select-wrapper">
+        <label>Tópicos (Conceitos Específicos)</label>
+
+        <div class="select-trigger" (click)="assuntosDisponiveis.length > 0 && toggleConceitosDropdown()" [class.disabled]="!assuntoSelecionadoCombo || assuntosDisponiveis.length === 0">
+          <span *ngIf="conceitosSelecionadosCombo.length === 0">
+            {{ assuntoSelecionadoCombo ? 'Todos (Geral)' : 'Selecione um assunto primeiro' }}
+          </span>
+          <span *ngIf="conceitosSelecionadosCombo.length > 0">
+            {{ conceitosSelecionadosCombo.length }} conceito(s) selecionado(s)
+          </span>
+          <span class="arrow" [class.open]="isConceitosDropdownOpen">▼</span>
+        </div>
+
+        <div class="select-dropdown" *ngIf="isConceitosDropdownOpen">
+          <label *ngFor="let conceito of conceitosDisponiveisCombo" class="dropdown-item">
+            <input type="checkbox"
+                  [checked]="isConceitoComboSelecionado(conceito)"
+                  (change)="onToggleConceitoCombo(conceito, $event)">
+            {{ conceito }}
+          </label>
+        </div>
+        <div class="select-backdrop" *ngIf="isConceitosDropdownOpen" (click)="toggleConceitosDropdown()"></div>
+      </div>
+
+      <button class="btn-adicionar-bloco" (click)="adicionarFiltroProva()" [disabled]="!assuntoSelecionadoCombo">
+        Adicionar à Prova
+      </button>
+
+    </div>
+
+    <div class="lista-resumo-container" *ngIf="topicosSelecionados.length > 0">
+      <strong>Filtros Aplicados: </strong>
       <span class="texto-lista">{{ listaTopicosFormatada }}</span>
     </div>
 
-    <hr>
+    <hr *ngIf="topicosSelecionados.length > 0">
 
-    <!-- Seções Dinâmicas -->
     <div class="topicos-selecionados-container">
-      
       <div class="topico-item-form" *ngFor="let item of topicosSelecionados; let i = index">
         <div class="topico-item-header">
-          <h4>Tópico: {{ item.topico }}</h4>
-          <span class="badge-total">{{ item.quantidade }} questões no total</span>
-          <button (click)="onRemoverTopico(item.topico)" class="btn-remover-topico">&times;</button>
+          <div class="header-titulos">
+            <ng-container *ngIf="item.subtopicos && item.subtopicos.length > 0">
+            <h4>{{ item.subtopicos[0].conceito }}</h4>              
+             <small class="conceitos-badge geral">
+                Módulo: {{ item.topico }}
+              </small>
+            </ng-container>
+
+            <ng-container *ngIf="!item.subtopicos || item.subtopicos.length === 0">
+              <h4>{{ item.topico }}</h4>
+              <small class="conceitos-badge geral">
+                Busca Abrangente
+              </small>
+            </ng-container>
+          </div>
+
+          <div class="header-acoes">
+            <span class="badge-total">{{ item.quantidade }} questões no total</span>
+            <button (click)="onRemoverTopicoPorIndex(i)" class="btn-remover-topico">&times;</button>
+          </div>
         </div>
 
         <div class="grid-dificuldades" style="display: flex; gap: 15px; margin-top: 15px;">
@@ -68,12 +89,10 @@
             <label>Fáceis</label>
             <input type="number" [(ngModel)]="item.quantidadeFaceis" (ngModelChange)="atualizarTotal(item)" min="0">
           </div>
-
           <div class="form-group">
             <label>Médias</label>
             <input type="number" [(ngModel)]="item.quantidadeMedias" (ngModelChange)="atualizarTotal(item)" min="0">
           </div>
-
           <div class="form-group">
             <label>Difíceis</label>
             <input type="number" [(ngModel)]="item.quantidadeDificeis" (ngModelChange)="atualizarTotal(item)" min="0">
@@ -82,10 +101,9 @@
       </div>
     </div>
 
-    <!-- Botão Gerar -->
     <div class="form-gerar-final" *ngIf="topicosSelecionados.length > 0">
       <button (click)="onGerarProvaBanco()" [disabled]="isLoadingAdicionar">
-        <span *ngIf="!isLoadingAdicionar">2. Gerar Prova</span>
+        <span *ngIf="!isLoadingAdicionar">2. Gerar Questões da Prova</span>
         <span *ngIf="isLoadingAdicionar" class="loader"></span>
       </button>
     </div>
@@ -94,91 +112,91 @@
 
   <!-- RESULTADOS -->
   <main *ngIf="prova$ | async as prova">
-  <div class="secao-carrinho" *ngIf="prova.questoes.length > 0">
-    <hr class="separador-grande">
-    <h2>3. Questões Adicionadas à Prova ({{ prova.questoes.length }})</h2>
-    
-    <div class="lista-questoes">
-      <div class="questao" *ngFor="let questao of prova.questoes; let i = index">
-        
-        <div class="campo-editavel">
-          <h3 *ngIf="!isEditando(i, 'enunciado')">
-            {{ i + 1 }}. {{ questao.enunciado }}
-            <button class="btn-icon-edit" (click)="ativarEdicao(i, 'enunciado')">✎</button>
-          </h3>
-          <div *ngIf="isEditando(i, 'enunciado')" class="edit-box">
-            <textarea [(ngModel)]="questao.enunciado" rows="3" class="form-control-inline"></textarea>
-            <button class="btn-save-inline" (click)="salvarEdicao()">OK</button>
-          </div>
-        </div>
+    <div class="secao-carrinho" *ngIf="prova.questoes.length > 0">
+      <hr class="separador-grande">
+      <h2>3. Questões Adicionadas à Prova ({{ prova.questoes.length }})</h2>
 
-        <ul *ngIf="questao.alternativas">
-          <li *ngFor="let alt of ['a','b','c','d','e']" class="campo-editavel">
-            
-            <div *ngIf="!isEditando(i, alt)">
-              <strong>{{ alt.toUpperCase() }})</strong> {{ questao.alternativas[alt] }}
-              <button class="btn-icon-edit" (click)="ativarEdicao(i, alt)">✎</button>
-            </div>
+      <div class="lista-questoes">
+        <div class="questao" *ngFor="let questao of prova.questoes; let i = index">
 
-            <div *ngIf="isEditando(i, alt)" class="edit-box">
-              <input [(ngModel)]="questao.alternativas[alt]" class="form-control-inline">
+          <div class="campo-editavel">
+            <h3 *ngIf="!isEditando(i, 'enunciado')">
+              {{ i + 1 }}. {{ questao.enunciado }}
+              <button class="btn-icon-edit" (click)="ativarEdicao(i, 'enunciado')">✎</button>
+            </h3>
+            <div *ngIf="isEditando(i, 'enunciado')" class="edit-box">
+              <textarea [(ngModel)]="questao.enunciado" rows="3" class="form-control-inline"></textarea>
               <button class="btn-save-inline" (click)="salvarEdicao()">OK</button>
             </div>
-            
-          </li>
-        </ul>
-
-        <div class="campo-editavel">
-          <p *ngIf="!isEditando(i, 'resposta')">
-            <strong>Resposta Correta:</strong> {{ questao.respostaCorreta }}
-            <button class="btn-icon-edit" (click)="ativarEdicao(i, 'resposta')">✎</button>
-          </p>
-          <div *ngIf="isEditando(i, 'resposta')" class="edit-box">
-            <label>Gabarito:</label>
-            <select [(ngModel)]="questao.respostaCorreta" class="form-control-inline-select">
-              <option *ngFor="let letra de ['A','B','C','D','E']" [value]="letra">{{ letra }}</option>
-            </select>
-            <button class="btn-save-inline" (click)="salvarEdicao()">OK</button>
           </div>
-        </div>
-        <div class="acoes-questao">
-        <button class="btn-descartar" (click)="onDescartarQuestao(i)" [disabled]="descartandoIndex === i">
-          <span *ngIf="descartandoIndex !== i">Descartar Questão</span>
-          <span *ngIf="descartandoIndex === i" class="loader"></span>
-        </button>
 
-          <button class="btn-comentarios" (click)="abrirComentarios(questao)">
-            Comentários
-          </button>
+          <ul *ngIf="questao.alternativas">
+            <li *ngFor="let alt of ['a','b','c','d','e']" class="campo-editavel">
+
+              <div *ngIf="!isEditando(i, alt)">
+                <strong>{{ alt.toUpperCase() }})</strong> {{ questao.alternativas[alt] }}
+                <button class="btn-icon-edit" (click)="ativarEdicao(i, alt)">✎</button>
+              </div>
+
+              <div *ngIf="isEditando(i, alt)" class="edit-box">
+                <input [(ngModel)]="questao.alternativas[alt]" class="form-control-inline">
+                <button class="btn-save-inline" (click)="salvarEdicao()">OK</button>
+              </div>
+
+            </li>
+          </ul>
+
+          <div class="campo-editavel">
+            <p *ngIf="!isEditando(i, 'resposta')">
+              <strong>Resposta Correta:</strong> {{ questao.respostaCorreta }}
+              <button class="btn-icon-edit" (click)="ativarEdicao(i, 'resposta')">✎</button>
+            </p>
+            <div *ngIf="isEditando(i, 'resposta')" class="edit-box">
+              <label>Gabarito:</label>
+              <select [(ngModel)]="questao.respostaCorreta" class="form-control-inline-select">
+                <option *ngFor="let letra of ['A','B','C','D','E']" [value]="letra">{{ letra }}</option>
+              </select>
+              <button class="btn-save-inline" (click)="salvarEdicao()">OK</button>
+            </div>
+          </div>
+
+          <div class="acoes-questao">
+            <button class="btn-descartar" (click)="onDescartarQuestao(i)" [disabled]="descartandoIndex === i">
+              <span *ngIf="descartandoIndex !== i">Descartar Questão</span>
+              <span *ngIf="descartandoIndex === i" class="loader"></span>
+            </button>
+
+            <button class="btn-comentarios" (click)="abrirComentarios(questao)">
+              Comentários
+            </button>
+          </div>
 
         </div>
       </div>
-    </div>
 
-    <footer class="rodape-prova">
+      <footer class="rodape-prova">
         <hr>
-        <button class="btn-finalizar" (click)="exportarFormatoAvaliar()" [disabled]="isLoadingFinalizar">
-          <span *ngIf="!isLoadingFinalizar">4. Salvar e Gerar PDF da Prova</span>
+        <button class="btn-finalizar" (click)="executarAcoesFinais()" [disabled]="isLoadingFinalizar">
+          <span *ngIf="!isLoadingFinalizar">4. Salvar Prova e Exportar</span>
           <span *ngIf="isLoadingFinalizar" class="loader"></span>
         </button>
       </footer>
-      
-  </div>
-  </main>
 
+    </div>
+  </main>
 
   <!-- MODAL COMENTÁRIOS -->
   <div class="modal-backdrop" *ngIf="modalAberta" (click)="fecharModal()"></div>
 
   <div class="modal" *ngIf="modalAberta">
-    
+
     <div class="modal-header">
       <h2>Comentários Técnicos</h2>
       <button class="btn-fechar" (click)="fecharModal()">✖</button>
     </div>
 
     <div class="modal-body" *ngIf="questaoSelecionada">
-      
+
       <div class="secao">
         <h3>Competência Avaliada</h3>
         <p>{{ questaoSelecionada.competencia }}</p>
@@ -192,4 +210,5 @@
     </div>
 
   </div>
-  </div>
+
+</div>

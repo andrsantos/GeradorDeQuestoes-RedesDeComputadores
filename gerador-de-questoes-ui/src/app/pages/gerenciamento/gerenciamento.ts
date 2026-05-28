@@ -6,6 +6,11 @@ import { Cenario } from '../../models/cenario.model';
 import { Prompt } from '../../models/prompt.model';
 import { Documento } from '../../models/documento.model';
 import { DocumentoExibicao } from '../../models/documento-exibicao.model';
+import { Router } from '@angular/router';
+import { AlimentacaoService } from '../../services/alimentacao/alimentacao-service';
+import { Observable } from 'rxjs';
+import { HttpEvent } from '@angular/common/http';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-gerenciamento',
@@ -50,10 +55,24 @@ export class Gerenciamento implements OnInit {
   showChunkModal: boolean = false;
   chunkSelecionado: Documento | null = null;
   listaMateriais: DocumentoExibicao[] = [];
+  public topico: string = ''; 
+  public modalContextoAberta = false;
+  public promptContexto: string = '';
+  public arquivoContexto: File | null = null;
+  public nivelSelecionado: string = 'UNIVERSITARIO_INTERMEDIARIO';
+  public fonteContexto: string = '';
+  public isArquivoContexto = false;
+  public isProcessingRag = false;
+  public arquivo: File | null = null;
+  public isSearching: boolean = false;
 
-
-
-  constructor(private fb: FormBuilder, private gerenciamentoService: GerenciamentoService) { }
+  constructor(private fb: FormBuilder, 
+    private gerenciamentoService: GerenciamentoService,
+    private router: Router,
+    private alimentacaoService: AlimentacaoService,
+    private toastr: ToastrService
+    
+) { }
 
   ngOnInit(): void {
     this.managementForm = this.fb.group({
@@ -76,18 +95,25 @@ export class Gerenciamento implements OnInit {
 
     this.insertPromptForm = this.fb.group({
       topico: ['', [Validators.required, Validators.minLength(5)]],
-      nivel: ['', Validators.required],
-      instrucoesEspecificas: ['', [Validators.required, Validators.minLength(20)]]
+      nivel: ['', Validators.required]
+      // instrucoesEspecificas: ['', [Validators.required, Validators.minLength(20)]]
     });
 
   }
 
 
 
-  onSearch(): void {
+onSearch(): void {
     if (this.managementForm.valid) {
-      this.searchPerformed = true;
-      this.listar();
+      this.isSearching = true; 
+      this.searchPerformed = false; 
+      
+      this.listar(); 
+
+      setTimeout(() => {
+        this.isSearching = false; 
+        this.searchPerformed = true; 
+      }, 2000);
     }
   }
 
@@ -193,6 +219,10 @@ export class Gerenciamento implements OnInit {
 
   fecharModalInsercaoPrompt(): void {
     this.showInsertPromptModal = false;
+  }
+
+  irParaCadastroPrompt():void {
+  this.router.navigate(['/cadastro-prompt']);
   }
 
   submeterInsercaoPrompt(): void {
@@ -421,15 +451,13 @@ export class Gerenciamento implements OnInit {
     return this.listaMateriais.filter(mat => {
       const topico = mat.topico || '';
       const fonte = mat.fonte || '';
-      const nivel = mat.nivel || '';
 
       const busca = this.filtroTopico.toLowerCase();
       
       const correspondeTopico = topico.toLowerCase().includes(busca) || 
                                 fonte.toLowerCase().includes(busca);                   
-      const correspondeNivel = this.filtroNivel === '' || nivel.toUpperCase() === this.filtroNivel.toUpperCase();
 
-      return correspondeTopico && correspondeNivel;
+      return correspondeTopico;
     });
   }
 
@@ -463,6 +491,75 @@ export class Gerenciamento implements OnInit {
       }
     });
   }
+
+  abrirModalContexto(file?: File): void {
+    this.modalContextoAberta = true;
+    if (file) {
+      this.arquivoContexto = file;
+      this.isArquivoContexto = true;
+    }
+  }
+
+   fecharModalContexto(): void {
+    this.modalContextoAberta = false;
+    this.arquivoContexto = null;
+    this.promptContexto = '';
+  }
+
+   isContextoValido(): boolean {
+    return !!this.arquivoContexto && 
+           this.promptContexto.trim().length > 0 && 
+           this.topico.trim().length > 0 && 
+           this.fonteContexto.trim().length > 0;
+  }
+
+  chamarUploadContexto(arquivo: File, topico: string, nivel: string): Observable<HttpEvent<any>> {
+      console.log("Iniciando upload de contexto para o tópico:", topico);
+      this.isArquivoContexto = true;
+      this.isProcessingRag = true;
+      return this.alimentacaoService.uploadPdf(arquivo, topico, this.fonteContexto);
+    }
+
+  iniciarUpload() {
+      if (!this.arquivoContexto) {
+        this.toastr.error('Nenhum arquivo selecionado.', 'Erro');
+        return;
+      }
+
+      this.chamarUploadContexto(this.arquivoContexto, this.topico, this.nivelSelecionado)
+        .subscribe({
+          next: (event) => {
+            console.log('Progresso do upload:', event);
+          },
+          error: (error) => {
+            console.error('Erro ao fazer upload do arquivo:', error);
+            this.isProcessingRag = false;
+            alert('Erro ao enviar o documento.');
+          },
+          complete: () => {
+            console.log('Upload finalizado com sucesso!');
+            this.isProcessingRag = false;
+            this.fecharModalContexto();
+            this.listar(); 
+            alert('Documento cadastrado e indexado com sucesso!');
+          }
+        });
+    }
+
+  onFileSelected(event: any, tipo: 'contexto'): void {
+    console.log("Chegou na fileselected");
+    const file = event.target?.files?.[0];
+    if (file?.type === 'application/pdf') {
+      if (tipo === 'contexto') {
+        this.arquivoContexto = file;
+        this.isArquivoContexto = true;
+      } 
+    } else {
+      this.toastr.error('Por favor, selecione apenas arquivos PDF.', 'Formato Inválido');
+    }
+  }
+
+  
 
 
 

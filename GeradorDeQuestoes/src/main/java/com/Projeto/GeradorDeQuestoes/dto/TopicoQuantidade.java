@@ -1,12 +1,16 @@
 package com.Projeto.GeradorDeQuestoes.dto;
 
+import java.util.List;
+
 public class TopicoQuantidade{
 
-    String topico;
-    int quantidade;
-    int quantidadeDificeis;
-    int quantidadeMedias;
-    int quantidadeFaceis;
+    String topico; // Camada de Aplicação
+    List<ConceitoConfigDTO> subtopicos; // Socket, Arquitetura P2P
+    int quantidade; // 3
+    int quantidadeDificeis; // 1 
+    int quantidadeMedias; // 1
+    int quantidadeFaceis; // 1
+    String diretrizCustomizada; // null
 
     public String getTopico() {
         return this.topico;
@@ -44,5 +48,25 @@ public class TopicoQuantidade{
     public void setQuantidadeFaceis(int quantidadeFaceis) {
         this.quantidadeFaceis = quantidadeFaceis;
     }
+
+
+    public List<ConceitoConfigDTO> getSubtopicos() {
+        return this.subtopicos;
+    }
+
+    public void setSubtopicos(List<ConceitoConfigDTO> subtopicos) {
+        this.subtopicos = subtopicos;
+    }
+    
+
+    public String getDiretrizCustomizada() {
+        return this.diretrizCustomizada;
+    }
+
+    public void setDiretrizCustomizada(String diretrizCustomizada) {
+        this.diretrizCustomizada = diretrizCustomizada;
+    }
+
+
 
 }

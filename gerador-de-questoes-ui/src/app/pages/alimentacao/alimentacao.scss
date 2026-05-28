@@ -79,17 +79,22 @@ h1 { color: var(--cor-secundaria); margin-bottom: 0.5rem; }
   background-color: var(--cor-secundaria); color: white; margin-top: 0.5rem;
 }
 
-/* --- MODAL DE REVISÃO (ESTILO EXCLUSIVO) --- */
+/* --- MODAL (COMPORTAMENTO BASE E VARIAÇÕES) --- */
 .modal-backdrop {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(2px); z-index: 1000;
 }
 
-.modal.modal-xl {
+/* Base que centraliza qualquer modal */
+.modal {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  background: #fff; width: 950px; max-width: 95%; max-height: 90vh;
-  border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-  z-index: 1001; display: flex; flex-direction: column;
+  background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  z-index: 1001; display: flex; flex-direction: column; max-height: 90vh;
+}
+
+/* Variação para modais mais largas (como a de revisão) */
+.modal.modal-xl {
+  width: 950px; max-width: 95%; 
 }
 
 .sticky-header {
@@ -272,3 +277,22 @@ h1 { color: var(--cor-secundaria); margin-bottom: 0.5rem; }
   }
 }
 
+/* --- Elementos de Formulário nas Modais --- */
+.form-group textarea,
+.form-group input:not([type="file"]) {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--cor-primaria);
+  border-radius: 6px;
+  font-family: inherit;
+  margin-top: 5px;
+  box-sizing: border-box; 
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+input[type="file"] {
+  display: none;
+}

@@ -1,11 +1,17 @@
 package com.Projeto.GeradorDeQuestoes.dto;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
 public class TopicoConfigDTO {
 
     private String id;
     private String topico;
     private String nivel;
     private String instrucoesEspecificas;
+    private LocalDateTime dataAtualizacao;
+    private List<UUID> listaDocumentos;
 
 
     public TopicoConfigDTO() {
@@ -16,8 +22,6 @@ public class TopicoConfigDTO {
         this.nivel = nivel;
         this.instrucoesEspecificas = instrucoesEspecificas;
     }
-
-
 
     public String getId() {
         return this.id;
@@ -50,6 +54,25 @@ public class TopicoConfigDTO {
     public void setInstrucoesEspecificas(String instrucoesEspecificas) {
         this.instrucoesEspecificas = instrucoesEspecificas;
     }
+
+    public List<UUID> getListaDocumentos() {
+        return this.listaDocumentos;
+    }
+
+    public void setListaDocumentos(List<UUID> listaDocumentos) {
+        this.listaDocumentos = listaDocumentos;
+    }
+
+
+    public LocalDateTime getDataAtualizacao() {
+        return this.dataAtualizacao;
+    }
+
+    public void setDataAtualizacao(LocalDateTime dataAtualizacao) {
+        this.dataAtualizacao = dataAtualizacao;
+    }
+    
+     
 
     
 }

@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 public class ProvaEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "titulo")
@@ -40,7 +41,6 @@ public class ProvaEntity {
     public List<QuestaoProvaEntity> getQuestoes() { return questoes; }
     public void setQuestoes(List<QuestaoProvaEntity> questoes) { this.questoes = questoes; }
 
-    // Método auxiliar para adicionar questão e manter a consistência
     public void addQuestao(QuestaoProvaEntity questao) {
         questoes.add(questao);
         questao.setProva(this);
