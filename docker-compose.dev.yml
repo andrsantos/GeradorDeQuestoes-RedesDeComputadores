@@ -1,0 +1,58 @@
+services:
+  db-questoes-dev:
+    image: pgvector/pgvector:pg16
+    container_name: db-ia-educacional-dev
+    restart: always
+    environment:
+      - POSTGRES_DB=ia_educacional
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=andreysantos12
+    ports:
+      - "5436:5432" 
+    volumes:
+      - pgdata_questoes_dev:/var/lib/postgresql/data 
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:                                         
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ia_educacional"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  api-questoes-dev:
+    build: 
+      context: ./GeradorDeQuestoes
+    container_name: api-ia-educacional-dev
+    restart: always
+    mem_limit: 1g
+    ports:
+      - "8083:8080"
+    depends_on:
+      db-questoes-dev:
+        condition: service_healthy 
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-questoes-dev:5432/ia_educacional
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=andreysantos12
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web-questoes-dev:
+    build: 
+      context: ./gerador-de-questoes-ui
+    container_name: web-ia-educacional-dev
+    restart: always
+    ports:
+      - "83:80" 
+    depends_on:
+      - api-questoes-dev
+    volumes:
+      - ./gerador-de-questoes-ui/nginx.dev.conf:/etc/nginx/conf.d/default.conf
+
+volumes:
+  pgdata_questoes_dev: 
