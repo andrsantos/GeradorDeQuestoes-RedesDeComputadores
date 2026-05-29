@@ -7,7 +7,7 @@ import { QuestaoFormatoAvaliarDTO } from '../../models/questao-formato-avaliar.m
 })
 export class IntegracaoAvaliarService {
 
-  private API_URL = 'http://187.77.240.149:82/api/integracao/avaliar';
+  private API_URL = 'http://187.77.240.149:83/api/integracao/avaliar';
 
   constructor(private http: HttpClient) {}
 
