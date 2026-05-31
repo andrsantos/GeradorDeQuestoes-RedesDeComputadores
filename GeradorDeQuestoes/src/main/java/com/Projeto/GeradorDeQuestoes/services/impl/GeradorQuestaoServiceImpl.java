@@ -203,7 +203,7 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
                     ).build())
                     .topK(3) 
                     .build();
-            System.out.println("Busca Vetorial: CIRÚRGICA para conceito [" + conceitoEspecífico + "] em [" + topico + "]");
+            System.out.println("Busca Vetorial para conceito [" + conceitoEspecífico + "] em [" + topico + "]");
         }
 
         List<Document> documentos = this.vectorStore.similaritySearch(sr);
