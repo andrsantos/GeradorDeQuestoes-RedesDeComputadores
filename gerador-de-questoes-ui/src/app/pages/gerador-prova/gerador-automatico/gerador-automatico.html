@@ -120,6 +120,18 @@
     
     <div class="lista-questoes">
       <div class="questao" *ngFor="let questao of prova.questoes; let i = index">
+
+        <div class="questao-badges">
+          <span class="badge badge-topico" *ngIf="questao.topico" title="Tópico da Questão">
+            <i class="fas fa-book"></i> {{ questao.topico }}
+          </span>
+          <span class="badge badge-conceito" *ngIf="questao.conceito" title="Conceito Específico">
+            <i class="fas fa-tag"></i> {{ questao.conceito }}
+          </span>
+          <span class="badge badge-nivel" *ngIf="questao.nivel" title="Nível de Dificuldade">
+            <i class="fas fa-layer-group"></i> {{ questao.nivel }}
+          </span>
+        </div>
         
         <div class="campo-editavel">
           <h3 *ngIf="!isEditando(i, 'enunciado')">
