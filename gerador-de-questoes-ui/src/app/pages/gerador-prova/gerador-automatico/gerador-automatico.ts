@@ -10,7 +10,7 @@ import { TopicoQuantidade } from '../../../models/topico-quantidade.model';
 import { shareReplay } from 'rxjs/operators';
 import { BancoQuestoesService } from '../../../services/banco-questoes/banco-questoes';
 import { BancoQuestao } from '../../../models/banco-questao.model';
-import { ConceitoConfig } from '../../../models/conceito-config.model'; // <-- IMPORTANTE
+import { ConceitoConfig } from '../../../models/conceito-config.model'; 
 
 export type CampoEdicao = 'enunciado' | 'resposta' | 'a' | 'b' | 'c' | 'd' | 'e';
 
@@ -234,6 +234,7 @@ export class GeradorAutomatico implements OnInit {
       next: (prova) => {
         this.isLoadingAdicionar = false;
         this.toastr.success('Questões geradas com sucesso!', 'Sucesso');
+        console.log("Prova gerada:" , prova);
       },
       error: (err) => {
         if (err.error && err.error.erro) {
