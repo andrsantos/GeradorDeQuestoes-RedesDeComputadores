@@ -1,0 +1,90 @@
+<div class="cadastro-page-container">
+  
+  <header class="page-header">
+    <div class="title-area">
+      <button class="btn-back" (click)="voltar()" [disabled]="isProcessingRag">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+      <div>
+        <h1>Cadastrar Documentos (PDF)</h1>
+        <p>Alimente a base de conhecimento adicionando novos materiais de referência.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="content-area">
+    
+    <div class="card-section">
+      <h3>1. Identificação do Tópico</h3>
+      <div class="form-group">
+        <label>Qual o grande tema destes documentos? (*)</label>
+        <input type="text" [(ngModel)]="topico" 
+               class="form-control form-control-lg"
+               placeholder="Ex: Redes de Computadores e a Internet"
+               [disabled]="isTopicoFixo"
+               [class.input-locked]="isTopicoFixo">
+        <small *ngIf="isTopicoFixo" class="info-text">
+          <i class="fas fa-lock"></i> Tópico bloqueado pois você está adicionando arquivos a um registro existente.
+        </small>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="section-header-flex">
+        <h3>2. Seleção de Materiais</h3>
+        
+        <input type="file" id="fileInput" multiple (change)="onFileSelected($event)" accept=".pdf" hidden>
+        <label for="fileInput" class="btn-add-files">
+          <i class="fas fa-search"></i> Procurar PDFs
+        </label>
+      </div>
+
+      <div *ngIf="arquivosContexto.length === 0" class="empty-files-area">
+        <i class="fas fa-file-pdf"></i>
+        <p>Nenhum documento selecionado.</p>
+        <span>Clique no botão acima para escolher os PDFs do seu computador.</span>
+      </div>
+
+      <div *ngIf="arquivosContexto.length > 0" class="files-grid">
+        <div class="file-card" *ngFor="let item of arquivosContexto; let i = index">
+          
+          <div class="file-header">
+            <div class="file-name">
+              <i class="fas fa-file-pdf text-danger"></i> 
+              <span title="{{ item.arquivo.name }}">{{ item.arquivo.name }}</span>
+            </div>
+            <button class="btn-remove" (click)="removerArquivoDaLista(i)" title="Remover"><i class="fas fa-times"></i></button>
+          </div>
+
+          <div class="file-body">
+            <label>Fonte / Autor (*):</label>
+            <input type="text" [(ngModel)]="item.fonte" class="form-control" placeholder="Ex: Kurose & Ross - Capítulo 1">
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+
+  <div class="form-actions-container">
+    <div class="action-info">
+      <span *ngIf="arquivosContexto.length > 0">
+        <strong>{{ arquivosContexto.length }}</strong> arquivo(s) pronto(s) para envio.
+      </span>
+    </div>
+    
+    <div class="action-buttons">
+      <button class="btn-cancel" (click)="voltar()" [disabled]="isProcessingRag">Cancelar</button>
+      
+      <button class="btn-submit" (click)="iniciarUpload()" [disabled]="isProcessingRag || !isContextoValido()">
+        <span *ngIf="!isProcessingRag"><i class="fas fa-cloud-upload-alt"></i> Salvar e Iniciar Indexação</span>
+        <div *ngIf="isProcessingRag" class="processing-state">
+          <span class="loader-small"></span> Processando (Aguarde)...
+        </div>
+      </button>
+    </div>
+  </div>
+
+</div>

@@ -7,13 +7,13 @@ import { Observable } from 'rxjs';
 })
 export class AlimentacaoService {
 
-  private readonly API_URL = 'http://187.77.240.149:83/api/alimentacao';
+  private readonly API_URL = 'http://localhost:8080/api/alimentacao';
 
-  private readonly API_URL_2 = 'http://187.77.240.149:83/api/admin/material/upload/questoes';
+  private readonly API_URL_2 = 'http://localhost:8080/api/admin/material/upload/questoes';
 
-  private readonly API_URL_3 = 'http://187.77.240.149:83/api/admin/material/upload';
+  private readonly API_URL_3 = 'http://localhost:8080/api/admin/material/upload';
 
-  private readonly API_URL_4 = 'http://187.77.240.149:83/api/documentacao';
+  private readonly API_URL_4 = 'http://localhost:8080/api/documentacao';
 
 
 

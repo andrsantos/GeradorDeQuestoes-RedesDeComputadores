@@ -1,0 +1,142 @@
+.cadastro-page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.page-header {
+  margin-bottom: 30px;
+  
+  .title-area {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+
+    h1 { margin: 0 0 5px 0; color: #2c3e50; font-size: 1.8rem; }
+    p { margin: 0; color: #6c757d; }
+  }
+
+  .btn-back {
+    background: #f8f9fa; border: 1px solid #ced4da; padding: 8px 16px; border-radius: 6px;
+    color: #495057; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;
+    &:hover { background: #e2e6ea; }
+  }
+}
+
+.card-section {
+  background: white; border-radius: 8px; padding: 25px; margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
+
+  h3 { margin-top: 0; margin-bottom: 20px; color: #0d6efd; font-size: 1.2rem; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px; }
+}
+
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; }
+.form-control { width: 100%; padding: 10px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;
+  &:focus { border-color: #0d6efd; }
+}
+.form-control-lg { font-size: 1.1rem; padding: 12px 16px; }
+.input-locked { background-color: #f1f3f5; color: #6c757d; cursor: not-allowed; border-color: #dee2e6; }
+.info-text { display: block; margin-top: 8px; color: #198754; font-weight: 500; font-size: 0.85rem; }
+
+.section-header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f8f9fa; padding-bottom: 10px; margin-bottom: 20px;
+  h3 { margin: 0; border: none; padding: 0; }
+}
+
+.btn-add-files { background: #e3f2fd; color: #0d6efd; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; border: 1px dashed #0d6efd; transition: all 0.2s;
+  &:hover { background: #bbdefb; }
+}
+
+.empty-files-area { text-align: center; padding: 40px 20px; background: #f8f9fa; border-radius: 8px; border: 2px dashed #ced4da;
+  i { font-size: 3rem; color: #adb5bd; margin-bottom: 15px; }
+  p { font-size: 1.2rem; color: #495057; margin: 0 0 5px 0; font-weight: 600; }
+  span { color: #6c757d; }
+}
+
+.files-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; }
+
+.file-card { border: 1px solid #dee2e6; border-radius: 8px; background: #fff; overflow: hidden; transition: box-shadow 0.2s;
+  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #b6d4fe; }
+
+  .file-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #f8f9fa; border-bottom: 1px solid #dee2e6;
+    .file-name { font-weight: 600; color: #212529; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; }
+    .btn-remove { background: none; border: none; color: #dc3545; cursor: pointer; padding: 5px; font-size: 1.1rem; &:hover { color: #b02a37; } }
+  }
+  .file-body { padding: 15px; }
+}
+
+.form-actions-container {
+  display: flex;
+  justify-content: flex-end; 
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 25px;
+  border-top: 1px solid #dee2e6;
+  width: 100%;
+  gap: 20px; 
+
+  .action-info {
+    color: #6c757d;
+    font-size: 0.95rem;
+    margin-right: auto; 
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 15px;
+  }
+
+  .btn-cancel {
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 1px solid #ced4da;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      background-color: #e2e6ea;
+      border-color: #dae0e5;
+      color: #212529;
+    }
+  }
+
+  .btn-submit {
+    background-color: #198754; 
+    color: #ffffff;
+    border: 1px solid transparent;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+
+    &:hover:not(:disabled) {
+      background-color: #157347; 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15); 
+    }
+
+    &:disabled {
+      background-color: #adb5bd;
+      color: #ffffff;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+  }
+
+  .processing-state {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}

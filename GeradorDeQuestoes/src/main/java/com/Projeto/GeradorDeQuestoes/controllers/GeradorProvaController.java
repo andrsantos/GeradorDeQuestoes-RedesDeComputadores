@@ -102,6 +102,11 @@ public class GeradorProvaController {
             });
             
             List<QuestaoDTO> questoesGeradasBanco = bancoQuestaoService.gerarQuestoesParaProva(request);
+            
+            questoesGeradasBanco.forEach(questao -> {
+            System.out.println("Topico: " + questao.getTopico());
+            });
+
             List<Questao> questoesParaConverter = new ArrayList<>();
             questoesGeradasBanco.forEach(questao -> 
                 questoesParaConverter.add(new Questao(
@@ -112,9 +117,14 @@ public class GeradorProvaController {
                     questao.getConceito(),
                     questao.getCompetencia(),
                     questao.getComentarioTecnico(),
+                    questao.getTopico(),
                     questao.getNivel()
                 ))
             );
+
+            questoesParaConverter.forEach(questao -> {
+            System.out.println("Topico: " + questao.getTopico());
+            });
 
             Prova prova = provaService.adicionarQuestoesDoBanco(id, questoesParaConverter);
             return ResponseEntity.ok(prova);

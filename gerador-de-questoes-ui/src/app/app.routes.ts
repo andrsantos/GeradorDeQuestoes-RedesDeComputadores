@@ -12,7 +12,8 @@ import { BancoQuestoes } from './pages/banco-dashboard/banco-questoes/banco-ques
 import { SelecionarQuestao } from './pages/banco-dashboard/selecionar-questao/selecionar-questao';
 import { Gerenciamento } from './pages/gerenciamento/gerenciamento';
 import { ProvaBuilder } from './pages/prova-builder/prova-builder';
-import { CadastroPrompt } from './pages/gerenciamento/cadastro-prompt/cadastro-prompt';
+import { CadastroDocumento } from './pages/gerenciamento/cadastro-documento/cadastro-documento';
+import { DetalhePrompt } from './pages/gerenciamento/detalhe-prompt/detalhe-prompt';
 
 export const routes: Routes = [
    {
@@ -82,9 +83,13 @@ export const routes: Routes = [
     title:'Gerenciamento - RAG'
   },
   {
-    path:'cadastro-prompt',
-    component: CadastroPrompt,
-    title: 'Cadastro de Prompt'
+    path: 'cadastro-documento',
+    component: CadastroDocumento,
+    title: 'Cadastro de Documento'
+  },
+  {
+    path: 'detalhe-prompt',
+    component: DetalhePrompt,
+    title: 'Detalhes de Prompt'
   }
-
 ];

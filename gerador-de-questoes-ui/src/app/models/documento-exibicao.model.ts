@@ -1,7 +1,6 @@
+import { Material } from "./material.model";
+
 export interface DocumentoExibicao {
-  idReferencia: string;
-  idBinario: string;
-  topico: string;
-  fonte: string;
-  materialReferencia: string;
+  topicoNome: string;
+  materiais: Material[];
 }

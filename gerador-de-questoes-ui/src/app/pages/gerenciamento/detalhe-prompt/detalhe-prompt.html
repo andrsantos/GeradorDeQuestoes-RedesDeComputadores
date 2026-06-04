@@ -1,0 +1,139 @@
+<div class="prompts-page-container">
+  
+  <header class="page-header">
+    <div class="header-content">
+      <button class="btn-voltar" (click)="voltarParaPainel()">
+        <i class="fas fa-arrow-left"></i> Voltar ao Painel
+      </button>
+      <div class="title-area">
+        <h1>Instruções de IA</h1>
+        <p class="subtitle">Gerenciando os prompts do tópico: <strong>{{ nomeTopico }}</strong></p>
+      </div>
+    </div>
+    
+    <div class="header-actions" *ngIf="!isLoading">
+      <button class="btn-primary" (click)="abrirFormularioNovo()">
+        <i class="fas fa-plus"></i> Novo Prompt
+      </button>
+    </div>
+  </header>
+
+
+  <main class="page-content">
+
+    <ng-container *ngIf="!isFormOpen">
+      
+      <div class="prompts-grid" *ngIf="isLoading">
+        <div class="prompt-card skeleton-card" *ngFor="let i of [1, 2, 3]">
+          <div class="card-header">
+            <div class="sk-badge skeleton"></div>
+            <div class="sk-badge skeleton"></div>
+          </div>
+          <div class="card-body">
+            <div class="sk-line skeleton" style="width: 100%;"></div>
+            <div class="sk-line skeleton" style="width: 90%;"></div>
+            <div class="sk-line skeleton" style="width: 80%;"></div>
+            <div class="sk-line skeleton" style="width: 60%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="!isLoading && prompts.length === 0">
+        <div class="empty-icon">
+          <i class="fas fa-robot"></i>
+        </div>
+        <h2>Nenhum prompt cadastrado</h2>
+        <p>Este tópico ainda não possui instruções personalizadas para a IA. Ele utilizará o prompt padrão do sistema caso questões sejam geradas.</p>
+      </div>
+
+      <div class="prompts-grid" *ngIf="!isLoading && prompts.length > 0">
+        <div class="prompt-card" *ngFor="let prompt of prompts" [class.inativo]="!prompt.ativo">
+          
+          <div class="card-header">
+            <span class="badge badge-nivel" [ngClass]="prompt.nivel.toLowerCase()">
+              <i class="fas fa-layer-group"></i> {{ prompt.nivel }}
+            </span>
+            <span class="badge badge-status" [ngClass]="prompt.ativo ? 'ativo' : 'inativo'">
+              <i class="fas" [ngClass]="prompt.ativo ? 'fa-check-circle' : 'fa-times-circle'"></i>
+              {{ prompt.ativo ? 'Em Uso' : 'Histórico' }}
+            </span>
+          </div>
+
+          <div class="card-body">
+            <label>Instrução do Sistema:</label>
+            <div class="instrucao-box">
+              {{ prompt.instrucao }}
+            </div>
+          </div>
+
+          <div class="card-footer">
+
+            <button class="btn-action" (click)="abrirFormularioEdicao(prompt)" title="Editar Prompt">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+
+              <button class="btn-action" (click)="alternarStatus(prompt)" title="Alternar Status">
+                <i class="fas" [ngClass]="prompt.ativo ? 'fa-ban' : 'fa-check'"></i> 
+                {{ prompt.ativo ? 'Desativar' : 'Ativar' }}
+              </button>
+                <button class="btn-action danger" (click)="deletarPrompt(prompt)" title="Excluir Prompt">
+                <i class="fas fa-trash"></i>
+                </button>          
+        </div>
+        </div>
+      </div>
+
+    </ng-container>
+
+
+    <div class="prompt-form-container" *ngIf="isFormOpen">
+      <div class="form-card">
+        <h2>Criar Nova Instrução (Prompt)</h2>
+        <p>Defina o comportamento da IA para a geração de questões deste tópico.</p>
+
+        <form [formGroup]="promptForm" (ngSubmit)="salvarPrompt()">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nível de Dificuldade Alvo (*)</label>
+              <select formControlName="nivel" class="form-control">
+                <option value="" disabled selected>Selecione um nível...</option>
+                <option value="UNIVERSITARIO_INICIANTE">Fácil (Iniciante)</option>
+                <option value="UNIVERSITARIO_INTERMEDIARIO">Médio (Intermediário)</option>
+                <option value="UNIVERSITARIO_AVANCADO">Difícil (Avançado)</option>
+              </select>
+            </div>
+
+            <div class="form-group toggle-group">
+              <label>Tornar Prompt Ativo?</label>
+              <label class="switch">
+                <input type="checkbox" formControlName="ativo">
+                <span class="slider round"></span>
+              </label>
+              <span class="hint">Se ativo, desativará o prompt anterior deste nível.</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Instruções do Sistema (*)</label>
+            <div class="hint-box">
+              <i class="fas fa-lightbulb"></i> <strong>Dica de Engenharia:</strong> Especifique regras claras. Ex: "Gere questões de múltipla escolha. Não use a palavra 'Incorreta'. Foque em casos práticos."
+            </div>
+            <textarea formControlName="instrucao" rows="12" class="form-control" placeholder="Escreva o prompt detalhado aqui..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancelar" (click)="cancelarNovo()" [disabled]="isSaving">Cancelar</button>
+            <button type="submit" class="btn-salvar" [disabled]="promptForm.invalid || isSaving">
+              <span *ngIf="!isSaving">Salvar Prompt</span>
+              <span *ngIf="isSaving"><i class="fas fa-spinner fa-spin"></i> Salvando...</span>
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+</div>

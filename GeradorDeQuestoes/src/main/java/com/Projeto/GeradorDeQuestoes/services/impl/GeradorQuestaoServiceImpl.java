@@ -5,9 +5,11 @@ import com.Projeto.GeradorDeQuestoes.dto.GerarQuestaoRequest;
 import com.Projeto.GeradorDeQuestoes.dto.ListaQuestoes;
 import com.Projeto.GeradorDeQuestoes.dto.Questao;
 import com.Projeto.GeradorDeQuestoes.dto.TopicoQuantidade;
+import com.Projeto.GeradorDeQuestoes.entities.PromptEntity;
 import com.Projeto.GeradorDeQuestoes.entities.TopicoConfigEntity;
 import com.Projeto.GeradorDeQuestoes.enums.NivelTecnico;
 import com.Projeto.GeradorDeQuestoes.repositories.CenarioConfigRepository;
+import com.Projeto.GeradorDeQuestoes.repositories.PromptRepository;
 import com.Projeto.GeradorDeQuestoes.repositories.TopicoConfigRepository;
 import com.Projeto.GeradorDeQuestoes.services.GeradorQuestaoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +39,7 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
     private final VectorStore vectorStore;
     private final TopicoConfigRepository topicoConfigRepository;
     private final CenarioConfigRepository cenarioConfigRepository;
+    private final PromptRepository promptRepository;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -45,12 +48,14 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
                                      VectorStore vectorStore,
                                      TopicoConfigRepository configRepository,
                                      CenarioConfigRepository cenarioConfigRepository,
+                                     PromptRepository promptRepository,
                                      @Qualifier("anthropicChatClient") ChatClient anthropicChatClient) {
         this.openAiChatClient = openAiChatClient;
         this.anthropicChatClient = anthropicChatClient;
         this.vectorStore = vectorStore;
         this.topicoConfigRepository = configRepository;
         this.cenarioConfigRepository = cenarioConfigRepository;
+        this.promptRepository = promptRepository;
     }
 
     @Override
@@ -98,23 +103,46 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
         return new ListaQuestoes(todasAsQuestoes);
     }
 
+    private String ajustandoStringDeNivel(String nivel){
+        String nivelAjustado = "";
+        if(nivel.equals("FACIL")){
+        nivelAjustado = "UNIVERSITARIO_INICIANTE";
+        return nivelAjustado;
+        }
+        if(nivel.equals("MEDIO")){
+        nivelAjustado = "UNIVERSITARIO_INTERMEDIARIO";
+        return nivelAjustado;
+        } else {
+        nivelAjustado = "UNIVERSITARIO_AVANCADO";
+        return nivelAjustado;
+        }
+    }
+
     private List<Questao> gerarQuestoesParaConceito(String nomeTopico, String conceito, String nivel, int quantidadeSolicitada) {
         List<Questao> blocoFinal = new ArrayList<>();
         
-        TopicoConfigEntity config = topicoConfigRepository.findByTopicoAndNivel(nomeTopico, nivel)
-            .or(() -> topicoConfigRepository.findByTopicoAndNivel("Padrao", nivel))
-            .orElseThrow(() -> new EntityNotFoundException(
-                "Erro Crítico: Não foi encontrado o prompt para o tópico '" + nomeTopico + 
-                "' e o prompt 'Padrao' também não está cadastrado para o nível " + nivel + "."));
+        String instrucoesDoAgente;
+        String nivelAjustado =  ajustandoStringDeNivel(nivel);
+        Optional<PromptEntity> promptCustomizado = promptRepository.findByTopicoNomeAndNivelAndAtivoTrue(nomeTopico, nivelAjustado);
+        if (promptCustomizado.isPresent()) {
+            instrucoesDoAgente = promptCustomizado.get().getInstrucao();
+            System.out.println("🤖 Usando Prompt Personalizado para o tópico: " + nomeTopico);
+        } else {
+            TopicoConfigEntity configPadrao = topicoConfigRepository.findByTopicoAndNivel("Padrao", nivel)
+                .orElseThrow(() -> new EntityNotFoundException(
+                    "Erro Crítico: Não há prompt personalizado para '" + nomeTopico + 
+                    "' e o prompt 'Padrao' também não está cadastrado para o nível " + nivel + "."));
+            
+            instrucoesDoAgente = configPadrao.getInstrucoesEspecificas();
+            System.out.println("⚠️ Prompt personalizado não encontrado. Usando instrução Padrão do sistema.");
+        }
 
         String conceitoDeExibicao = (conceito == null || conceito.isBlank()) ? "Geral (" + nomeTopico + ")" : conceito;
-
         int tentativasMaximas = quantidadeSolicitada * 3;
         int tentativasAtuais = 0;
 
         while (blocoFinal.size() < quantidadeSolicitada && tentativasAtuais < tentativasMaximas) {
             tentativasAtuais++;
-            
             String contextoDoConceito = recuperarContextoDoBanco(nomeTopico, conceito);
 
             if (contextoDoConceito.isBlank()) {
@@ -129,7 +157,7 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
                 try {
                     if (questaoRaw == null) {
                         System.out.println("Gerando questão para conceito: " + conceitoDeExibicao + " (Nível: " + nivel + ")");
-                        questaoRaw = chamarAgenteEscritor(nomeTopico, nivel, contextoDoConceito, config, conceitoDeExibicao);
+                        questaoRaw = chamarAgenteEscritor(nomeTopico, nivel, contextoDoConceito,conceitoDeExibicao);
                     }
 
                     List<Questao> listaRascunho = parsearRespostaTags(questaoRaw);
@@ -141,8 +169,7 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
 
                     Questao rascunho = listaRascunho.get(0);
                     
-                    String instrucoesDeEstilo = config.getInstrucoesEspecificas(); 
-                    String questaoContextualizadaRaw = chamarAgenteContextualizador(rascunho, conceitoDeExibicao, instrucoesDeEstilo);
+                    String questaoContextualizadaRaw = chamarAgenteContextualizador(rascunho, conceitoDeExibicao, instrucoesDoAgente);
                     
                     List<Questao> listaFinal = parsearRespostaTags(questaoContextualizadaRaw);
                     if (!listaFinal.isEmpty()) {
@@ -309,7 +336,7 @@ public class GeradorQuestaoServiceImpl implements GeradorQuestaoService {
         return "";
     }
 
-    private String chamarAgenteEscritor(String topico, String nivel, String contexto, TopicoConfigEntity config, String conceito) {
+    private String chamarAgenteEscritor(String topico, String nivel, String contexto, String conceito) {
         
         String templateBase = """
             Você é um especialista técnico avaliador.

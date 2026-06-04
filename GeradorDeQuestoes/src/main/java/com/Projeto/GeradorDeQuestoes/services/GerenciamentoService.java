@@ -3,6 +3,7 @@ package com.Projeto.GeradorDeQuestoes.services;
 import java.util.List;
 import com.Projeto.GeradorDeQuestoes.dto.CenarioConfigDTO;
 import com.Projeto.GeradorDeQuestoes.dto.DocumentoExibicaoDTO;
+import com.Projeto.GeradorDeQuestoes.dto.TopicoAgrupadoDTO;
 import com.Projeto.GeradorDeQuestoes.dto.TopicoConfigDTO;
 import com.Projeto.GeradorDeQuestoes.dto.VectorStoreDTO;
 import com.Projeto.GeradorDeQuestoes.entities.CenarioConfigEntity;
@@ -26,6 +27,8 @@ public interface GerenciamentoService {
    List<DocumentoExibicaoDTO> listarDocumentosCadastrados();
 
    void deletarDocumento(String idBinario);
+
+   List<TopicoAgrupadoDTO> listarDocumentosAgrupados();
 
 
 

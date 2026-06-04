@@ -49,6 +49,7 @@ public class BancoQuestaoServiceImpl implements BancoQuestaoService {
                         entity.getConceito(),
                         entity.getCompetencia(),
                         entity.getComentarioTecnico(),
+                        entity.getTopico(),
                         entity.getNivel()
                 ))
                 .toList(); 

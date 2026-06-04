@@ -340,3 +340,50 @@ input[type="file"] {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.skeleton-table-container {
+  margin-top: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.sk-table-header {
+  height: 50px;
+  background: #f8fafc;
+  border-bottom: 2px solid #edf2f7;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.sk-table-row {
+  height: 60px;
+  border-bottom: 1px solid #edf2f7;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+}
+
+.sk-bar {
+  background: #f1f5f9;
+  height: 15px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-bar::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: shimmer-effect 1.5s infinite;
+}
+
+@keyframes shimmer-effect {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

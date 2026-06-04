@@ -3,7 +3,9 @@ package com.Projeto.GeradorDeQuestoes.services.impl;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import com.Projeto.GeradorDeQuestoes.dto.CenarioConfigDTO;
@@ -20,6 +22,8 @@ import com.Projeto.GeradorDeQuestoes.repositories.DocumentosReferenciaRepository
 import com.Projeto.GeradorDeQuestoes.repositories.TopicoConfigRepository;
 import com.Projeto.GeradorDeQuestoes.repositories.VectorStoreRepository;
 import com.Projeto.GeradorDeQuestoes.dto.DocumentoExibicaoDTO;
+import com.Projeto.GeradorDeQuestoes.dto.MaterialDTO;
+import com.Projeto.GeradorDeQuestoes.dto.TopicoAgrupadoDTO;
 import com.Projeto.GeradorDeQuestoes.services.GerenciamentoService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -177,7 +181,7 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
         return documentosReferenciaRepository.findAll().stream().map(ref -> {
             DocumentoExibicaoDTO dto = new DocumentoExibicaoDTO();
             dto.setIdBinario(ref.getPdfBinario().getId()); 
-            dto.setTopico(ref.getTopico());
+            dto.setTopico(ref.getTopico().getNome());
             dto.setMaterialReferencia(ref.getPdfBinario().getNomeOriginal());
             return dto;
         }).toList();
@@ -190,7 +194,7 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
         return referencias.stream().map(ref -> new DocumentoExibicaoDTO(
             ref.getId(),
             ref.getPdfBinario().getId(),
-            ref.getTopico(),
+            ref.getTopico().getNome(),
             ref.getFonte(), 
             ref.getPdfBinario().getNomeOriginal()
         )).toList();
@@ -212,6 +216,34 @@ public class GerenciamentoServiceImpl implements GerenciamentoService {
         }
 
         documentosReferenciaRepository.delete(documento);
+    }
+
+    @Override
+    public List<TopicoAgrupadoDTO> listarDocumentosAgrupados() {
+        List<DocumentosReferenciaEntity> todasReferencias = documentosReferenciaRepository.findAll();
+
+        Map<String, List<DocumentosReferenciaEntity>> documentosPorTopico = todasReferencias.stream()
+                .collect(Collectors.groupingBy(ref -> ref.getTopico().getNome()));
+
+        List<TopicoAgrupadoDTO> resultado = new ArrayList<>();
+
+        documentosPorTopico.forEach((nomeTopico, listaRefs) -> {
+            TopicoAgrupadoDTO dtoAgrupado = new TopicoAgrupadoDTO();
+            dtoAgrupado.setTopicoNome(nomeTopico);
+            
+            List<MaterialDTO> materiais = listaRefs.stream().map(ref -> {
+                MaterialDTO mat = new MaterialDTO();
+                mat.setIdBinario(ref.getPdfBinario().getId());
+                mat.setFonte(ref.getFonte());
+                mat.setNomeArquivo(ref.getPdfBinario().getNomeOriginal());
+                return mat;
+            }).toList();
+            
+            dtoAgrupado.setMateriais(materiais);
+            resultado.add(dtoAgrupado);
+        });
+
+        return resultado;
     }
 
     

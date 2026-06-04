@@ -1,4 +1,3 @@
-
 <div class="admin-container">
   <h2>Painel de Gerenciamento de Banco</h2>
   <p>Pesquise os registros de documentação para ver os materiais cadastrados na sua base, <br>inserir ou excluir novos materiais.</p>
@@ -7,7 +6,7 @@
     <div class="selection-group">
       <label>
         <input type="radio" formControlName="tableType" value="documentation">
-        Documentação
+        Tópicos
       </label>
       <label style="display:none;">
         <input type="radio" formControlName="tableType" value="scenarios">
@@ -19,13 +18,27 @@
       </label>
     </div>
     <button type="submit" [disabled]="!managementForm.valid || isSearching" class="btn-search">
-      <span *ngIf="!isSearching">Pesquisar Registros de Documentação</span>
+      <span *ngIf="!isSearching">Pesquisar Registros de Tópicos</span>
       
       <div *ngIf="isSearching" style="display: flex; gap: 8px; align-items: center; justify-content: center;">
         <span class="loader-small"></span> Pesquisando...
       </div>
     </button>
   </form>
+
+  <!-- <div class="skeleton-table-container" *ngIf="isSearching">
+    <div class="sk-table-header">
+      <div class="sk-bar" style="width: 100px;"></div>
+    </div>
+    <div class="sk-table-row" *ngFor="let i of [1,2,3,4,5]">
+      <div class="sk-bar" style="width: 20%;"></div>
+      <div class="sk-bar" style="width: 15%;"></div>
+      <div class="sk-bar" style="width: 50%;"></div>
+      <div class="sk-bar" style="width: 10%;"></div>
+    </div>
+  </div> -->
+
+  
 
   <div class="results-area" *ngIf="searchPerformed">
 
@@ -158,282 +171,201 @@
       </div>
     </div>
 
-      <div *ngIf="managementForm.get('tableType')?.value === 'documentation'">
+
+    <div *ngIf="managementForm.get('tableType')?.value === 'documentation'">
       <div class="filters-container">
         <div class="filter-group">
           <label>Filtrar Tópico/Fonte:</label>
           <input type="text" [(ngModel)]="filtroTopico" (input)="onFiltroChange()" placeholder="Ex: TCP, Kurose...">
         </div>
-        <div class="filter-group">
-          <label>Nível:</label>
-          <select [(ngModel)]="filtroNivel" (change)="onFiltroChange()">
-            <option value="">Todos</option>
-            <option value="UNIVERSITARIO_INICIANTE">Iniciante</option>
-            <option value="UNIVERSITARIO_INTERMEDIARIO">Médio</option>
-            <option value="UNIVERSITARIO_AVANCADO">Avançado</option>
-          </select>
-        </div>
         <button type="button" class="btn-clear" (click)="limparFiltros()">Limpar</button>
       </div>
 
-      <div class="table-header-actions">
-        <span>Materiais na Base: <strong>{{ listaMateriaisFiltrada.length }}</strong></span>
+      <div class="table-header-actions" *ngIf="!isSearching && searchPerformed">
+        <span>Tópicos na Base: <strong>{{ listaMateriaisFiltrada.length }}</strong></span>
         <button type="button" class="btn-insert" (click)="abrirModalContexto()">
-          <i class="fas fa-plus-circle"></i> Cadastrar Documento
+          <i class="fas fa-plus-circle"></i> Novo Tópico / Upload PDF
         </button>
       </div>
 
-      <div *ngIf="listaMateriaisFiltrada.length === 0" class="empty-state-container" style="text-align: center; padding: 40px; background: #f8f9fa; border: 1px dashed #ced4da; border-radius: 8px; margin-top: 15px;">
-        <i class="fas fa-file-pdf" style="font-size: 3rem; color: #adb5bd; margin-bottom: 15px;"></i>
-        <h3 style="color: #495057; margin-bottom: 10px;">Nenhum documento encontrado.</h3>
-        <p style="color: #6c757d; margin-bottom: 20px;">Você ainda não tem documentos cadastrados na base para este filtro. Insira novos documentos para começar a gerar questões.</p>
-        <button type="button" class="btn-insert" (click)="abrirModalContexto()">
-          <i class="fas fa-cloud-upload-alt"></i> Fazer Upload de PDF
-        </button>
-      </div>
-
-      <ng-container *ngIf="listaMateriaisFiltrada.length > 0">
-        <table class="admin-table">
+      <ng-container *ngIf="!isSearching && searchPerformed && listaMateriaisFiltrada.length > 0">
+        <table class="admin-table table-agrupada">
           <thead>
             <tr>
-              <th>Tópico</th>
-              <th>Fonte</th>
-              <th>Material de Referência</th>
-              <th>Ações</th>
+              <th style="width: 50%;">Tópico Principal</th>
+              <th style="text-align: center; width: 25%;">Contexto (RAG)</th>
+              <th style="text-align: center; width: 25%;">Instruções (IA)</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let mat of listaMateriaisPaginada">
-              <td class="font-weight-bold">{{ mat.topico }}</td>
-              <td><small>{{ mat.fonte }}</small></td>
-              <td class="text-left">
-                <i class="fas fa-file-pdf" style="color: #e74c3c; margin-right: 5px;"></i> 
-                {{ mat.materialReferencia }}
+            <tr *ngFor="let topicoAgrupado of listaMateriaisPaginada">
+              <td class="font-weight-bold" style="font-size: 1.1rem; color: var(--cor-primaria);">
+                <i class="fas fa-book-open" style="margin-right: 8px;"></i>
+                {{ topicoAgrupado.topicoNome }}
               </td>
-              <td class="actions-cell">
-                <button class="btn-edit-small" (click)="baixarPDF(mat.idBinario, mat.materialReferencia)" title="Baixar Arquivo">
-                  <i class="fas fa-download"></i>
-                </button> 
-                <button class="btn-delete-small" title="Excluir Vínculo" (click)="excluirMaterial(mat.idBinario, mat.materialReferencia)">
-                  <i class="fas fa-trash"></i>
+              
+              <td style="padding: 10px; text-align: center;">
+                <button class="btn-ver-materiais" 
+                        (click)="abrirModalMateriais(topicoAgrupado)" 
+                        style="background-color: #f8f9fa; border: 1px solid #ced4da; padding: 8px 16px; border-radius: 6px; cursor: pointer; color: #495057; font-weight: 600; transition: all 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <i class="fas fa-file-pdf" style="color: #e74c3c;"></i> 
+                  {{ topicoAgrupado.materiais.length }} PDF(s)
+                </button>
+              </td>
+
+              <td style="padding: 10px; text-align: center;">
+                <button class="btn-gerenciar-prompts" 
+                        (click)="irParaCadastroPromptComTopico(topicoAgrupado)" 
+                        style="background-color: #f8fafc; border: 1px solid var(--cor-primaria); padding: 8px 16px; border-radius: 6px; cursor: pointer; color: var(--cor-primaria); font-weight: 600; transition: all 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <i class="fas fa-robot"></i> 
+                  Gerenciar Prompts
                 </button>
               </td>
             </tr>
           </tbody>
         </table>
 
-        <div class="pagination-controls">
-          <button (click)="mudarPagina(false)" [disabled]="paginaAtual === 1">Anterior</button>
-          <span>Página <strong>{{ paginaAtual }}</strong> de {{ totalPaginas }}</span>
-          <button (click)="mudarPagina(true)" [disabled]="paginaAtual === totalPaginas">Próxima</button>
-        </div>
-      </ng-container>
+        </ng-container>
     </div>
+    
 
-    <div class="modal-overlay" *ngIf="showChunkModal && chunkSelecionado" (click)="showChunkModal = false">
-      <div class="modal-content prompt-modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Detalhes do Fragmento (RAG)</h3>
-          <button class="btn-close" (click)="showChunkModal = false">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="chunk-meta-info">
-            <p><strong>Tópico:</strong> {{ getParsedMeta(chunkSelecionado).topico || 'Não informado' }}</p>
-            <p><strong>Fonte:</strong> {{ getParsedMeta(chunkSelecionado).fonte || 'Não informada' }}</p>
-            <p><strong>Arquivo Original:</strong> {{ getParsedMeta(chunkSelecionado).source || 'Desconhecido' }}</p>
-          </div>
-          <div class="prompt-text">
-            {{ chunkSelecionado.conteudo }}
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" (click)="showChunkModal = false">Fechar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" *ngIf="showInsertModal" (click)="fecharModalInsercao()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header insert-header">
-        <h3><i class="fas fa-plus-circle"></i> Novo Cenário</h3>
-        <button class="btn-close" (click)="fecharModalInsercao()">×</button>
-      </div>
-
-      <form [formGroup]="insertCenarioForm" (ngSubmit)="submeterInsercao()" class="modal-form">
-        <div class="form-group">
-          <label>Tópico:</label>
-          <input type="text" formControlName="topico" placeholder="Ex: Camada de Rede">
-        </div>
-
-        <div class="form-group">
-          <label>Nível:</label>
-          <select formControlName="nivel">
-            <option value="" disabled>Selecione...</option>
-            <option value="FACIL">Fácil</option>
-            <option value="MEDIO">Médio</option>
-            <option value="DIFICIL">Difícil</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Descrição:</label>
-          <textarea formControlName="descricao" rows="4" placeholder="Descreva o cenário..."></textarea>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn-cancel" (click)="fecharModalInsercao()">Cancelar</button>
-          <button type="submit" class="btn-save" [disabled]="insertCenarioForm.invalid">
-            <i class="fas fa-save"></i> Salvar Cenário
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="fecharModalDelecao()">
-    <div class="modal-content delete-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header delete-header">
-        <h3>Confirmar Exclusão</h3>
-        <button class="btn-close" (click)="fecharModalDelecao()">×</button>
-      </div>
-      <div class="modal-body">
-        <p>Deseja apagar permanentemente este cenário?</p>
-        <div class="record-preview" *ngIf="cenarioParaDeletar">
-          <p><strong>Tópico:</strong> {{ cenarioParaDeletar.topico }}</p>
-          <p><strong>Descrição:</strong> {{ cenarioParaDeletar.descricao }}</p>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" (click)="fecharModalDelecao()">Cancelar</button>
-        <button type="button" class="btn-confirm-delete" (click)="confirmarExclusao()">Excluir</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" *ngIf="showEditModal" (click)="fecharModalEdicao()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Editar Cenário</h3>
-        <button class="btn-close" (click)="fecharModalEdicao()">×</button>
-      </div>
-      <form [formGroup]="editCenarioForm" (ngSubmit)="submeterEdicao()" class="modal-form">
-        <div class="form-group">
-          <label>Tópico:</label>
-          <input type="text" formControlName="topico">
-        </div>
-        <div class="form-group">
-          <label>Nível:</label>
-          <select formControlName="nivel">
-            <option value="FACIL">Fácil</option>
-            <option value="MEDIO">Médio</option>
-            <option value="DIFICIL">Difícil</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Descrição:</label>
-          <textarea formControlName="descricao" rows="4"></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-cancel" (click)="fecharModalEdicao()">Cancelar</button>
-          <button type="submit" class="btn-save" [disabled]="editCenarioForm.invalid">Salvar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal-overlay" *ngIf="showPromptModal" (click)="showPromptModal = false">
-    <div class="modal-content prompt-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Instruções: {{ (idPromptEditando ? promptTemporario : promptSelecionado)?.topico }}</h3>
-        <button class="btn-close" (click)="showPromptModal = false">×</button>
-      </div>
-      <div class="modal-body">
-        <pre *ngIf="!idPromptEditando" class="prompt-text">{{ promptSelecionado?.instrucoesEspecificas }}</pre>
-        <textarea *ngIf="idPromptEditando" [(ngModel)]="promptTemporario.instrucoesEspecificas" class="prompt-edit-area" rows="15"></textarea>
-      </div>
-      <div class="modal-footer" *ngIf="idPromptEditando">
-        <button class="btn-save" (click)="showPromptModal = false">Confirmar Alteração de Texto</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" *ngIf="showInsertPromptModal" (click)="fecharModalInsercaoPrompt()">
-    <div class="modal-content prompt-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header insert-header">
-        <h3><i class="fas fa-magic"></i> Cadastrar Novo Prompt</h3>
-        <button class="btn-close" (click)="fecharModalInsercaoPrompt()">×</button>
-      </div>
-
-      <form [formGroup]="insertPromptForm" (ngSubmit)="submeterInsercaoPrompt()" class="modal-form">
-        <div class="form-group">
-          <label>Tópico Principal:</label>
-          <input type="text" formControlName="topico" placeholder="Ex: Camada de Aplicação">
-        </div>
-        <div class="form-group">
-          <label>Corpo das Instruções (System Prompt):</label>
-          <textarea formControlName="instrucoesEspecificas" rows="12" class="prompt-edit-area" placeholder="Cole aqui as instruções..."></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-cancel" (click)="fecharModalInsercaoPrompt()">Cancelar</button>
-          <button type="submit" class="btn-save" [disabled]="insertPromptForm.invalid">
-            <i class="fas fa-save"></i> Salvar Prompt
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
+  </div> <div class="modal-overlay" *ngIf="showChunkModal && chunkSelecionado" (click)="showChunkModal = false"></div>
+  <div class="modal-overlay" *ngIf="showInsertModal" (click)="fecharModalInsercao()"></div>
+  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="fecharModalDelecao()"></div>
+  <div class="modal-overlay" *ngIf="showEditModal" (click)="fecharModalEdicao()"></div>
+  <div class="modal-overlay" *ngIf="showPromptModal" (click)="showPromptModal = false"></div>
+  <div class="modal-overlay" *ngIf="showInsertPromptModal" (click)="fecharModalInsercaoPrompt()"></div>
 
   <div class="modal-backdrop" *ngIf="modalContextoAberta"></div>
 
-<div class="modal" *ngIf="modalContextoAberta" style="width: 700px; max-width: 95%;">
-  <div class="modal-header sticky-header">
-    <div class="header-info">
-      <h2>Cadastrar Documento</h2>
+  <!-- <div class="modal-backdrop" *ngIf="modalContextoAberta"></div> -->
+
+  <div class="modal-backdrop" *ngIf="modalContextoAberta"></div>
+  <div class="modal" *ngIf="modalContextoAberta" style="width: 700px; max-width: 95%;">
+    <div class="modal-header sticky-header">
+      <div class="header-info">
+        <h2>Cadastrar Documentos</h2>
+      </div>
+      <div class="header-actions">
+        <button class="btn-fechar" (click)="fecharModalContexto()">✖</button>
+      </div>
     </div>
-    <div class="header-actions">
-      <button class="btn-fechar" (click)="fecharModalContexto()">✖</button>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Tópico de Contexto (*):</label>
+        <input [(ngModel)]="topico" 
+               placeholder="Ex: Camada Física, Camada de Aplicação"
+               [disabled]="isTopicoFixo"
+               [style.background-color]="isTopicoFixo ? '#e9ecef' : 'white'"
+               [style.cursor]="isTopicoFixo ? 'not-allowed' : 'text'">
+      </div>
+
+      <div class="form-group" style="margin-top: 1.5rem; padding: 1rem; border: 1px dashed var(--cor-primaria); border-radius: 8px; background: #f8fafc;">
+        <label style="display: block; margin-bottom: 10px; font-weight: bold; color: var(--cor-primaria);">
+          Selecione os Materiais PDF (*):
+        </label>
+        
+        <input type="file" id="fileContextoModal" multiple (change)="onFileSelected($event, 'contexto')" accept=".pdf" hidden>
+        <label for="fileContextoModal" class="btn-selecionar" style="display: inline-block;">Procurar PDFs no Computador</label>
+        
+        <div *ngIf="arquivosContexto && arquivosContexto.length > 0" style="margin-top: 15px;">
+          <p style="color: var(--cor-sucesso); font-weight: bold; margin-bottom: 12px;">
+            📄 {{ arquivosContexto.length }} Arquivo(s) selecionado(s):
+          </p>
+          
+          <ul style="list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+            <li *ngFor="let item of arquivosContexto; let i = index" style="background: white; padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 0.9rem; color: #495057; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  <i class="fas fa-file-pdf" style="color: #e74c3c; margin-right: 5px;"></i> 
+                  {{ item.arquivo?.name }} 
+                </span>
+                <button type="button" (click)="removerArquivoDaLista(i)" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 1rem; padding: 0 5px;" title="Remover PDF">✖</button>
+              </div>
+              
+              <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" [(ngModel)]="item.fonte" 
+                       placeholder="Digite a fonte deste PDF (Ex: Kurose - Cap 3)" 
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.85rem;">
+              </div>
+
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="fecharModalContexto()" [disabled]="isProcessingRag">Cancelar</button>
+      <button class="btn-finalizar-batch" (click)="iniciarUpload()" [disabled]="isProcessingRag || !isContextoValido()">
+        <span *ngIf="!isProcessingRag">Salvar e Alimentar </span>
+        <div *ngIf="isProcessingRag" class="loader-container" style="display: flex; gap: 8px; align-items: center;">
+          <span class="loader-small"></span> Processando...
+        </div>
+      </button>
     </div>
   </div>
+  
+  <div class="modal-overlay" *ngIf="showMateriaisModal" (click)="fecharModalMateriais()">
+    <div class="modal-content" style="width: 700px; max-width: 95%;" (click)="$event.stopPropagation()">
+<!--       
+      <div class="modal-header">
+        <h3><i class="fas fa-folder-open" style="color: var(--cor-primaria); margin-right: 8px;"></i> Arquivos: {{ topicoSelecionadoModal?.topicoNome }}</h3>
+        <button class="btn-close" (click)="fecharModalMateriais()">×</button>
+      </div> -->
 
-  <div class="modal-body">
-    <div class="form-group">
-      <label>Tópico de Contexto (*):</label>
-      <input [(ngModel)]="topico" placeholder="Ex: Camada Física, Camada de Aplicação">
-    </div>
-
-    <div class="form-group">
-      <label>Fonte (*):</label>
-      <input [(ngModel)]="fonteContexto" placeholder="Ex: Kurose & Ross - Capítulo 3...">
-    </div>
-
-    <div class="form-group" style="margin-top: 1.5rem; padding: 1rem; border: 1px dashed var(--cor-primaria); border-radius: 8px; background: #f8fafc;">
-      <label style="display: block; margin-bottom: 10px; font-weight: bold; color: var(--cor-primaria);">
-        Selecione o Material PDF (*):
-      </label>
-      <input type="file" id="fileContextoModal" (change)="onFileSelected($event, 'contexto')" accept=".pdf" hidden>
-      <label for="fileContextoModal" class="btn-selecionar" style="display: inline-block;">Procurar PDF no Computador</label>
+       <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3><i class="fas fa-folder-open" style="color: var(--cor-primaria); margin-right: 8px;"></i> Arquivos: {{ topicoSelecionadoModal?.topicoNome }}</h3>
+        
+        <div class="header-actions" style="display: flex; gap: 15px; align-items: center;">
+          <button class="btn-insert" 
+                  style="padding: 6px 12px; font-size: 0.85rem;" 
+                  (click)="adicionarMaterialAoTopicoExistente(topicoSelecionadoModal?.topicoNome)">
+            <i class="fas fa-plus"></i> Adicionar Novo PDF
+          </button>
+          
+          <button class="btn-close" (click)="fecharModalMateriais()" style="margin-left: 10px;">×</button>
+        </div>
+      </div>
       
-      <div *ngIf="arquivoContexto" style="margin-top: 10px; color: var(--cor-sucesso); font-weight: bold;">
-        📄 Arquivo selecionado: {{ arquivoContexto.name }}
+      <div class="modal-body" style="max-height: 60vh; overflow-y: auto; padding: 20px;">
+        <div *ngIf="!topicoSelecionadoModal?.materiais || topicoSelecionadoModal?.materiais?.length === 0" style="text-align: center; color: #6c757d; padding: 20px;">
+          Nenhum material encontrado neste tópico.
+        </div>
+        
+        <div class="lista-materiais-filhos" style="display: flex; flex-direction: column; gap: 12px;">
+          <div *ngFor="let mat of topicoSelecionadoModal?.materiais" 
+               class="material-item" 
+               style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6;">
+            
+            <div class="material-info" style="display: flex; flex-direction: column; gap: 5px;">
+              <span class="fonte-badge" style="font-size: 0.8rem; font-weight: bold; color: #6c757d; text-transform: uppercase;">
+                Fonte: {{ mat.fonte }}
+              </span>
+              <span class="nome-arquivo" style="font-weight: 500; color: #212529;">
+                <i class="fas fa-file-pdf" style="color: #e74c3c; margin-right: 5px;"></i> 
+                {{ mat.nomeArquivo }}
+              </span>
+            </div>
+
+            <div class="material-actions" style="display: flex; gap: 10px;">
+              <button class="btn-edit-small" (click)="baixarPDF(mat.idBinario, mat.nomeArquivo)" title="Baixar Arquivo" style="padding: 8px 12px;">
+                <i class="fas fa-download"></i>
+              </button> 
+              <button class="btn-delete-small" title="Excluir Documento" (click)="excluirMaterial(mat.idBinario, mat.nomeArquivo)" style="padding: 8px 12px;">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer" style="padding: 15px 20px; border-top: 1px solid #dee2e6; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn-cancel" (click)="fecharModalMateriais()">Fechar</button>
       </div>
     </div>
-
   </div>
 
-  <div class="modal-footer">
-    <button class="btn-cancelar" (click)="fecharModalContexto()" [disabled]="isProcessingRag">Cancelar</button>
-    <button class="btn-finalizar-batch" (click)="iniciarUpload()" [disabled]="isProcessingRag">
-      <span *ngIf="!isProcessingRag">Salvar e Alimentar </span>
-      <div *ngIf="isProcessingRag" class="loader-container" style="display: flex; gap: 8px; align-items: center;">
-        <span class="loader-small"></span> Processando...
-      </div>
-    </button>
-  </div>
 </div>
-
-
-
-</div>
-

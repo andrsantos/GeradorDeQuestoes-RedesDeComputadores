@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CadastroPrompt } from './cadastro-prompt';
+import { CadastroDocumento } from './cadastro-documento';
 
-describe('CadastroPrompt', () => {
-  let component: CadastroPrompt;
-  let fixture: ComponentFixture<CadastroPrompt>;
+describe('CadastroDocumento', () => {
+  let component: CadastroDocumento;
+  let fixture: ComponentFixture<CadastroDocumento>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CadastroPrompt]
+      imports: [CadastroDocumento]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CadastroPrompt);
+    fixture = TestBed.createComponent(CadastroDocumento);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

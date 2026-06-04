@@ -11,6 +11,8 @@ import { AlimentacaoService } from '../../services/alimentacao/alimentacao-servi
 import { Observable } from 'rxjs';
 import { HttpEvent } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
+import { ArquivoUpload } from '../../models/arquivo-upload.model';
+import { PromptService } from '../../services/prompts/prompt-service';
 
 @Component({
   selector: 'app-gerenciamento',
@@ -21,7 +23,6 @@ import { ToastrService } from 'ngx-toastr';
 })
 export class Gerenciamento implements OnInit {
   
-
   // Variáveis de Controle
   managementForm!: FormGroup;
   searchPerformed = false;
@@ -58,20 +59,29 @@ export class Gerenciamento implements OnInit {
   public topico: string = ''; 
   public modalContextoAberta = false;
   public promptContexto: string = '';
-  public arquivoContexto: File | null = null;
+  public arquivosContexto: ArquivoUpload[] = []; 
+  
   public nivelSelecionado: string = 'UNIVERSITARIO_INTERMEDIARIO';
   public fonteContexto: string = '';
   public isArquivoContexto = false;
   public isProcessingRag = false;
-  public arquivo: File | null = null;
   public isSearching: boolean = false;
+  showMateriaisModal: boolean = false;
+  topicoSelecionadoModal: DocumentoExibicao | null = null;
+  public isTopicoFixo: boolean = false;
+
+
+  showGerenciarPromptsModal: boolean = false;
+  topicoPromptsSelecionado: DocumentoExibicao | null = null;
+  promptsDoTopico: Prompt[] = []; 
+  isLoadingPromptsTopico: boolean = false;
 
   constructor(private fb: FormBuilder, 
     private gerenciamentoService: GerenciamentoService,
     private router: Router,
     private alimentacaoService: AlimentacaoService,
-    private toastr: ToastrService
-    
+    private toastr: ToastrService,
+    private promptService: PromptService
 ) { }
 
   ngOnInit(): void {
@@ -96,22 +106,13 @@ export class Gerenciamento implements OnInit {
       topico: ['', [Validators.required, Validators.minLength(5)]],
       nivel: ['', Validators.required]
     });
-
   }
 
-
-
-onSearch(): void {
+  onSearch(): void {
     if (this.managementForm.valid) {
-      this.isSearching = true; 
-      this.searchPerformed = false; 
-      
-      this.listar(); 
-
-      setTimeout(() => {
-        this.isSearching = false; 
-        this.searchPerformed = true; 
-      }, 2000);
+      this.isSearching = true;
+      this.searchPerformed = false;
+      this.listar();
     }
   }
 
@@ -144,28 +145,33 @@ onSearch(): void {
         error: (error) => console.error('Erro ao listar prompts:', error)
       });
     }
-
+    
     if (request.filtro === 'documentation') {
       request.filtro = 'DOCUMENTOS';
       this.gerenciamentoService.listarDocumentosFiltrados().subscribe({
         next: (materiais) => {
           this.paginaAtual = 1;
           this.listaMateriais = materiais;
-          console.log('Materiais listados:', materiais);
         },
-        error: (error) => console.error('Erro ao listar materiais:', error)
+        error: (error) => {
+          console.error('Erro ao listar materiais:', error);
+          this.isSearching = false;
+          this.searchPerformed = true;
+        },
+        complete: () => {
+          this.isSearching = false;  
+          this.searchPerformed = true;
+        }
       });
-    }
-
-
   }
 
+    
+  }
   
   iniciarEdicaoPrompt(prompt: Prompt): void {
     this.idPromptEditando = prompt.id;
     this.promptTemporario = { ...prompt };
   }
-
   
   cancelarEdicao(): void {
     this.idPromptEditando = null;
@@ -218,7 +224,7 @@ onSearch(): void {
   }
 
   irParaCadastroPrompt():void {
-  this.router.navigate(['/cadastro-prompt']);
+    this.router.navigate(['/cadastro-prompt']);
   }
 
   submeterInsercaoPrompt(): void {
@@ -240,8 +246,6 @@ onSearch(): void {
     }
   }
 
-
-  // --- MÉTODOS DE CENÁRIO ---
   submeterInsercao(): void {
     if (this.insertCenarioForm.valid) {
       const novoCenario: Cenario = this.insertCenarioForm.value;
@@ -325,7 +329,6 @@ onSearch(): void {
     this.cenarioAtualizado = null;
   }
 
-  // --- AUXILIARES ---
   mudarPagina(proxima: boolean): void {
     if (proxima && this.paginaAtual < this.totalPaginas) {
       this.paginaAtual++;
@@ -384,8 +387,8 @@ onSearch(): void {
       const busca = this.filtroTopico.toLowerCase();
       
       const correspondeTopico = topico.toLowerCase().includes(busca) || 
-                              fonte.toLowerCase().includes(busca);
-                              
+                                fonte.toLowerCase().includes(busca);
+                                
       const correspondeNivel = this.filtroNivel === '' || nivel === this.filtroNivel;
 
       return correspondeTopico && correspondeNivel;
@@ -443,17 +446,19 @@ onSearch(): void {
     this.paginaAtual = 1;
   }
 
-  get listaMateriaisFiltrada(): DocumentoExibicao[] {
+get listaMateriaisFiltrada(): DocumentoExibicao[] {
     return this.listaMateriais.filter(mat => {
-      const topico = mat.topico || '';
-      const fonte = mat.fonte || '';
-
+      const topico = mat.topicoNome || '';
       const busca = this.filtroTopico.toLowerCase();
       
-      const correspondeTopico = topico.toLowerCase().includes(busca) || 
-                                fonte.toLowerCase().includes(busca);                   
+      const correspondeTopico = topico.toLowerCase().includes(busca);
 
-      return correspondeTopico;
+      const correspondeFonte = mat.materiais && mat.materiais.some(m => 
+        (m.fonte && m.fonte.toLowerCase().includes(busca)) ||
+        (m.nomeArquivo && m.nomeArquivo.toLowerCase().includes(busca))
+      );
+
+      return correspondeTopico || correspondeFonte;
     });
   }
 
@@ -488,71 +493,86 @@ onSearch(): void {
     });
   }
 
-  abrirModalContexto(file?: File): void {
-    this.modalContextoAberta = true;
-    if (file) {
-      this.arquivoContexto = file;
-      this.isArquivoContexto = true;
-    }
+
+  abrirModalContexto(): void {
+    this.router.navigate(['/cadastro-documento']);
   }
 
    fecharModalContexto(): void {
     this.modalContextoAberta = false;
-    this.arquivoContexto = null;
+    this.arquivosContexto = []; 
+    this.isArquivoContexto = false;
     this.promptContexto = '';
+    this.topico = ''; 
+    this.isTopicoFixo = false; 
   }
 
-   isContextoValido(): boolean {
-    return !!this.arquivoContexto && 
-           this.promptContexto.trim().length > 0 && 
-           this.topico.trim().length > 0 && 
-           this.fonteContexto.trim().length > 0;
+  isContextoValido(): boolean {
+    if (!this.topico || this.topico.trim().length === 0) return false;
+    if (this.arquivosContexto.length === 0) return false;
+    
+    const algumSemFonte = this.arquivosContexto.some(item => !item.fonte || item.fonte.trim().length === 0);
+    
+    return !algumSemFonte;
   }
-
-  chamarUploadContexto(arquivo: File, topico: string, nivel: string): Observable<HttpEvent<any>> {
-      console.log("Iniciando upload de contexto para o tópico:", topico);
-      this.isArquivoContexto = true;
-      this.isProcessingRag = true;
-      return this.alimentacaoService.uploadPdf(arquivo, topico, this.fonteContexto);
-    }
-
-  iniciarUpload() {
-      if (!this.arquivoContexto) {
-        this.toastr.error('Nenhum arquivo selecionado.', 'Erro');
-        return;
-      }
-
-      this.chamarUploadContexto(this.arquivoContexto, this.topico, this.nivelSelecionado)
-        .subscribe({
-          next: (event) => {
-            console.log('Progresso do upload:', event);
-          },
-          error: (error) => {
-            console.error('Erro ao fazer upload do arquivo:', error);
-            this.isProcessingRag = false;
-            alert('Erro ao enviar o documento.');
-          },
-          complete: () => {
-            console.log('Upload finalizado com sucesso!');
-            this.isProcessingRag = false;
-            this.fecharModalContexto();
-            this.listar(); 
-            alert('Documento cadastrado e indexado com sucesso!');
-          }
-        });
-    }
 
   onFileSelected(event: any, tipo: 'contexto'): void {
-    console.log("Chegou na fileselected");
-    const file = event.target?.files?.[0];
-    if (file?.type === 'application/pdf') {
-      if (tipo === 'contexto') {
-        this.arquivoContexto = file;
-        this.isArquivoContexto = true;
-      } 
-    } else {
-      this.toastr.error('Por favor, selecione apenas arquivos PDF.', 'Formato Inválido');
+    const files: FileList = event.target?.files;
+    
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type === 'application/pdf') {
+          this.arquivosContexto.push({ arquivo: file, fonte: '' });
+        } else {
+          this.toastr.error(`O arquivo ${file.name} não é um PDF e foi ignorado.`, 'Formato Inválido');
+        }
+      }
+      this.isArquivoContexto = this.arquivosContexto.length > 0;
     }
+    
+    event.target.value = '';
+  }
+
+  removerArquivoDaLista(index: number): void {
+    this.arquivosContexto.splice(index, 1);
+    this.isArquivoContexto = this.arquivosContexto.length > 0;
+  }
+
+private uploadSequencial(index: number = 0) {
+    if (index >= this.arquivosContexto.length) {
+      this.isProcessingRag = false;
+      this.fecharModalContexto();
+      this.listar(); 
+      this.toastr.success('Todos os documentos foram cadastrados e indexados com sucesso!', 'Upload Concluído');
+      return;
+    }
+
+    const itemAtual = this.arquivosContexto[index];
+    console.log(`Enviando arquivo ${index + 1} de ${this.arquivosContexto.length}: ${itemAtual.arquivo.name}`);
+
+    this.alimentacaoService.uploadPdf(itemAtual.arquivo, this.topico, itemAtual.fonte)
+      .subscribe({
+        next: (event) => {  },
+        error: (error) => {
+          this.toastr.error(`Falha ao indexar ${itemAtual.arquivo.name}. Pulando para o próximo...`, 'Erro');
+          this.uploadSequencial(index + 1);
+        },
+        complete: () => {
+          this.uploadSequencial(index + 1);
+        }
+      });
+  }
+
+  iniciarUpload() {
+    if (this.arquivosContexto.length === 0) {
+      this.toastr.error('Nenhum arquivo selecionado.', 'Erro');
+      return;
+    }
+    
+    this.isProcessingRag = true;
+    
+    this.uploadSequencial(0);
   }
 
   excluirMaterial(idBinario: string, nomeMaterial: string): void {
@@ -560,7 +580,13 @@ onSearch(): void {
       
       this.gerenciamentoService.deletarMaterialBinario(idBinario).subscribe({
         next: () => {
-          this.listaMateriais = this.listaMateriais.filter(mat => mat.idBinario !== idBinario);
+          this.listaMateriais = this.listaMateriais.map(mat => {
+            return {
+              ...mat,
+              materiais: mat.materiais.filter(m => m.idBinario !== idBinario)
+            };
+          })
+          .filter(mat => mat.materiais.length > 0);
           
           if (this.listaMateriaisPaginada.length === 0 && this.paginaAtual > 1) {
             this.paginaAtual--;
@@ -573,10 +599,65 @@ onSearch(): void {
           this.toastr.error('Erro ao tentar excluir o documento. Verifique os logs.', 'Erro');
         }
       });
+
     }
+  }
+
+  abrirModalMateriais(topico: DocumentoExibicao): void {
+    this.topicoSelecionadoModal = topico;
+    this.showMateriaisModal = true;
+  }
+
+  fecharModalMateriais(): void {
+    this.showMateriaisModal = false;
+    this.topicoSelecionadoModal = null;
+  }
+
+  adicionarMaterialAoTopicoExistente(nomeTopico: string | undefined): void {
+    if (!nomeTopico) return;
+    this.fecharModalMateriais();
+    this.router.navigate(['/cadastro-documento'], { queryParams: { topico: nomeTopico } });
   }
 
 
 
+  
+  abrirModalGerenciarPrompts(topico: DocumentoExibicao): void {
+    this.topicoPromptsSelecionado = topico;
+    this.showGerenciarPromptsModal = true;
+    this.buscarPromptsDoTopico(topico.topicoNome);
+  }
 
+  fecharModalGerenciarPrompts(): void {
+    this.showGerenciarPromptsModal = false;
+    this.topicoPromptsSelecionado = null;
+    this.promptsDoTopico = [];
+  }
+
+  buscarPromptsDoTopico(nomeTopico: string): void {
+    this.isLoadingPromptsTopico = true;
+    this.promptsDoTopico = []; 
+
+    this.promptService.listarPromptsPorTopico(nomeTopico).subscribe({
+      next: (prompts: Prompt[]) => {
+        this.promptsDoTopico = prompts;
+        this.isLoadingPromptsTopico = false;
+      },
+      error: (error) => {
+        console.error('Erro ao buscar prompts do tópico:', error);
+        this.toastr.error('Erro ao carregar os prompts deste tópico.', 'Erro');
+        this.isLoadingPromptsTopico = false;
+      }
+    });
+  }
+
+  irParaCadastroPromptComTopico(topico: DocumentoExibicao): void {
+      this.router.navigate(['/detalhe-prompt'], { 
+        queryParams: { topico: topico.topicoNome} 
+      });
+  }
+
+
+
+  
 }

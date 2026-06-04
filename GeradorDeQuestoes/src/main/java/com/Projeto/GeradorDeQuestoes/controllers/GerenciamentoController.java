@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.Projeto.GeradorDeQuestoes.dto.CenarioConfigDTO;
-import com.Projeto.GeradorDeQuestoes.dto.DocumentoExibicaoDTO;
 import com.Projeto.GeradorDeQuestoes.dto.FiltroGerenciamentoDTO;
+import com.Projeto.GeradorDeQuestoes.dto.TopicoAgrupadoDTO;
 import com.Projeto.GeradorDeQuestoes.dto.TopicoConfigDTO;
 import com.Projeto.GeradorDeQuestoes.services.GerenciamentoService;
 
@@ -96,18 +96,12 @@ public class GerenciamentoController {
     }
 
     @GetMapping("/listar/documentos/filtrados")
-    public ResponseEntity<List<DocumentoExibicaoDTO>> listarDocumentosFiltrados() {
+    public ResponseEntity<List<TopicoAgrupadoDTO>> listarDocumentosFiltrados() {
         try {
 
-            List<DocumentoExibicaoDTO> lista = gerenciamentoService
-            .listarDocumentosCadastrados();
+            List<TopicoAgrupadoDTO> lista = gerenciamentoService
+            .listarDocumentosAgrupados();
 
-
-            lista.forEach(documento -> {
-                System.out.println("Fonte: " + documento.getFonte());
-                System.out.println("Topico: " + documento.getTopico());
-                System.out.println("Material de Referencia: " + documento.getMaterialReferencia());
-            });
             
             return ResponseEntity.ok(lista);
 

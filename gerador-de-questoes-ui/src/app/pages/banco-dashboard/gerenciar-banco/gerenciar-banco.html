@@ -1,9 +1,10 @@
 <div class="container">
+
   <header>
     <h1>Gerenciar Banco de Questões</h1>
     <p class="subtitle">Visualize, edite ou exclua suas questões cadastradas.</p>
 
-    <div class="controls-bar">
+    <div class="controls-bar" *ngIf="questoes && questoes.length > 0">
       <button class="btn-cadastrar" (click)="abrirCadastro()">
         + Cadastrar Questão
       </button>
@@ -11,7 +12,7 @@
       <div class="search-container">
         <input 
           type="text" 
-          placeholder="Pesquisar enunciado, tópico ou conceito..." 
+          placeholder="Pesquisar enunciado..." 
           [(ngModel)]="searchTerm"
           (input)="onSearch()"
           class="search-input"
@@ -20,7 +21,6 @@
       </div>
 
       <div class="filters-group">
-        <!-- Filtro de Data -->
         <div class="filter-item">
           <input 
             type="date" 
@@ -32,31 +32,40 @@
         </div>
 
         <div class="filter-item">
-          <!-- <label for="filterTopico">Tópico:</label> -->
-          <select id="filterTopico" (change)="onTopicoChange($event)">
+          <select id="filterTopico" [(ngModel)]="topicoSelecionado" (change)="onTopicoChange($event)">
             <option value="">Todos os Tópicos</option>
-            <option *ngFor="let t of topicosDisponiveis" [value]="t">
-              {{ t }}
-            </option>
+            <option *ngFor="let t of topicosDisponiveis" [value]="t">{{ t }}</option>
           </select>
         </div>
 
         <div class="filter-item">
-          <!-- <label for="sortOrder">Ordenar por:</label> -->
+          <select id="filterConceito" [(ngModel)]="conceitoSelecionado" (change)="onConceitoChange()">
+            <option value="">Todos os Conceitos</option>
+            <option *ngFor="let c of conceitosDisponiveis" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <select id="filterNivel" [(ngModel)]="nivelSelecionado" (change)="onNivelChange()">
+            <option value="">Todos os Níveis</option>
+            <option value="UNIVERSITARIO_INICIANTE">Iniciante</option>
+            <option value="UNIVERSITARIO_INTERMEDIARIO">Intermediário</option>
+            <option value="UNIVERSITARIO_AVANCADO">Avançado</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
           <select id="sortOrder" (change)="onOrderChange($event)">
             <option value="desc">Mais recentes</option>
             <option value="asc">Mais antigas</option>
           </select>
         </div>
 
-        <div class="filter-item" *ngIf="dataFiltro || topicoSelecionado || searchTerm">
+        <div class="filter-item" *ngIf="dataFiltro || topicoSelecionado || conceitoSelecionado || nivelSelecionado || searchTerm">
             <button class="btn-limpar-filtros" (click)="limparFiltros()">
-              <span class="icon">🧹</span>
-              Limpar Filtros
+              <span class="icon">🧹</span> Limpar Filtros
             </button>
           </div>
-
-
       </div>
     </div>
   </header>
@@ -65,64 +74,99 @@
     Carregando questões...
   </div>
 
-  <div class="lista-questoes" *ngIf="!isLoading">
+  <div class="empty-state-container" *ngIf="!isLoading && (!questoesExibidas || questoesExibidas.length === 0)" 
+       style="text-align: center; padding: 60px 20px; background: #f8f9fa; border: 2px dashed #ced4da; border-radius: 8px; margin-top: 20px;">
+    
+    <div style="font-size: 3.5rem; color: #adb5bd; margin-bottom: 15px;">📭</div>
+    
+    <h3 style="color: #495057; margin-bottom: 10px; font-size: 1.4rem;">Nenhuma questão encontrada</h3>
+    <p style="color: #6c757d; margin-bottom: 25px; font-size: 1rem;">
+      O seu banco de questões está vazio ou nenhuma questão corresponde aos filtros aplicados na pesquisa.
+    </p>
+    
+    <button class="btn-cadastrar" (click)="abrirCadastro()" style="padding: 12px 24px; font-size: 1rem;">
+      + Cadastrar Primeira Questão
+    </button>
+  </div>
 
-    <div class="card-questao" *ngFor="let q of questoesExibidas">
-
-      <div class="card-header">
-        <div class="badges">
-          <span class="badge-tipo">{{ q.tipo }}</span>
-          <span class="badge-topico">{{ q.topico }}</span>
-          <span class="badge-topico">{{ q.conceito }}</span>
-          <span class="badge-topico">{{ q.nivel }}</span>
 
 
-        </div>
-        <div class="data-postagem">
-          <small>Inserida em: {{ q.dataCriacao | date:'dd/MM/yyyy HH:mm' }}</small>
-        </div>
+<div class="lista-questoes" *ngIf="!isLoading">
+
+  <div class="card-questao" *ngFor="let q of questoesExibidas; let i = index">
+
+    <div class="card-header">
+      <div class="badges">
+        <span class="badge-tipo">{{ q.tipo }}</span>
+        <span class="badge-topico">{{ q.topico }}</span>
+        <span class="badge-topico">{{ q.conceito }}</span>
+        <span class="badge-topico">{{ q.nivel }}</span>
       </div>
-
-      <div class="enunciado">
-        {{ q.enunciado }}
+      <div class="data-postagem">
+        <small>Inserida em: {{ q.dataCriacao | date:'dd/MM/yyyy HH:mm' }}</small>
       </div>
-
-      <div class="area-alternativas" *ngIf="q.tipo === 'MULTIPLA_ESCOLHA_4' || q.tipo === 'MULTIPLA_ESCOLHA_5'">
-        <div class="alternativa" *ngFor="let key of objectKeys(q.alternativas)">
-          <ng-container *ngIf="q.alternativas[key]">
-            <span class="letra">{{ key | uppercase }})</span>
-            <span class="texto">{{ q.alternativas[key] }}</span>
-          </ng-container>
-        </div>
-      </div>
-
-      <div class="gabarito">
-        <strong>Resposta Correta:</strong> 
-        {{ q.respostaCorreta | uppercase }}
-      </div>
-
-      <!-- AÇÕES -->
-      <div class="card-actions">
-        <button class="btn-comentarios" (click)="abrirComentarios(q)">
-          Comentários
-        </button>
-        <button class="btn-editar" (click)="onAbrirEdicao(q)">
-          Editar
-        </button>
-        <button class="btn-excluir" (click)="onExcluir(q.id)">
-          Excluir
-        </button>
-      </div>
-
     </div>
 
-    <div *ngIf="questoesExibidas.length === 0 && !isLoading" class="empty-state">
-      <div class="empty-icon">🔍</div>
-      <p>Nenhuma questão encontrada para os filtros selecionados.</p>
-      <small *ngIf="topicoSelecionado">Tente mudar o tópico ou limpar os filtros.</small>
+    <div class="campo-editavel" style="margin-top: 15px;">
+      <div class="enunciado" *ngIf="!isEditando(i, 'enunciado')">
+        {{ q.enunciado }}
+        <button class="btn-icon-edit" (click)="ativarEdicao(i, 'enunciado')" title="Editar Enunciado">✎</button>
+      </div>
+      <div *ngIf="isEditando(i, 'enunciado')" class="edit-box">
+        <textarea [(ngModel)]="q.enunciado" rows="4" class="form-control-inline" style="width: 100%;"></textarea>
+        <button class="btn-save-inline" (click)="salvarEdicaoItem(q, i, 'enunciado')">OK</button>
+      </div>
+    </div>
+
+    <div class="area-alternativas" *ngIf="q.tipo === 'MULTIPLA_ESCOLHA_4' || q.tipo === 'MULTIPLA_ESCOLHA_5'">
+      <div class="alternativa campo-editavel" *ngFor="let key of objectKeys(q.alternativas)">
+        <ng-container *ngIf="q.alternativas[key]">
+          
+          <div *ngIf="!isEditando(i, key)">
+            <span class="letra">{{ key | uppercase }})</span>
+            <span class="texto">{{ q.alternativas[key] }}</span>
+            <button class="btn-icon-edit" (click)="ativarEdicao(i, key)" title="Editar Alternativa">✎</button>
+          </div>
+
+          <div *ngIf="isEditando(i, key)" class="edit-box">
+            <span class="letra">{{ key | uppercase }})</span>
+            <input [(ngModel)]="q.alternativas[key]" class="form-control-inline" style="width: 80%;">
+            <button class="btn-save-inline" (click)="salvarEdicaoItem(q, i, key)">OK</button>
+          </div>
+
+        </ng-container>
+      </div>
+    </div>
+
+    <div class="campo-editavel" style="margin-top: 15px;">
+      <div class="gabarito" *ngIf="!isEditando(i, 'resposta')">
+        <strong>Resposta Correta:</strong> {{ q.respostaCorreta | uppercase }}
+        <button class="btn-icon-edit" (click)="ativarEdicao(i, 'resposta')" title="Editar Gabarito">✎</button>
+      </div>
+      <div *ngIf="isEditando(i, 'resposta')" class="edit-box">
+        <label>Gabarito:</label>
+        <select [(ngModel)]="q.respostaCorreta" class="form-control-inline-select">
+          <option value="a">A</option>
+          <option value="b">B</option>
+          <option value="c">C</option>
+          <option value="d">D</option>
+          <option value="e" *ngIf="q.tipo === 'MULTIPLA_ESCOLHA_5'">E</option>
+        </select>
+        <button class="btn-save-inline" (click)="salvarEdicaoItem(q, i, 'resposta')">OK</button>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button class="btn-comentarios" (click)="abrirComentarios(q)">
+        Comentários
+      </button>
+      <button class="btn-excluir" (click)="onExcluir(q.id)">
+        Excluir
+      </button>
     </div>
 
   </div>
+</div>
 </div>
 
 
@@ -156,37 +200,37 @@
     </div>
     <div class="modal-content">
       <div class="form-group">
-        <label>Tópico</label>
+        <label>Tópico(*)</label>
         <input [(ngModel)]="novaQuestao.topico" type="text">
       </div>
       <div class="form-group">
-        <label>Enunciado</label>
+        <label>Enunciado(*)</label>
         <textarea [(ngModel)]="novaQuestao.enunciado" rows="4"></textarea>
       </div>
       <div class="area-alternativas-form">
-        <h4>Alternativas</h4>
+        <h4>Alternativas(*)</h4>
         <div class="input-group" *ngFor="let letra of ['a','b','c','d','e']">
           <span>{{ letra | uppercase }})</span>
           <input [(ngModel)]="novaQuestao.alternativas[letra]">
         </div>
       </div>
       <div class="form-group">
-        <label>Resposta Correta</label>
+        <label>Resposta Correta(*)</label>
         <select [(ngModel)]="novaQuestao.respostaCorreta">
           <option value="">Selecione</option>
           <option *ngFor="let letra of ['a','b','c','d','e']" [value]="letra">{{ letra | uppercase }}</option>
         </select>
       </div>
       <div class="form-group">
-        <label>Competência</label>
+        <label>Competência(Opcional)</label>
         <input [(ngModel)]="novaQuestao.competencia">
       </div>
       <div class="form-group">
-        <label>Conceito</label>
+        <label>Conceito(*)</label>
         <textarea [(ngModel)]="novaQuestao.conceito" rows="3"></textarea>
       </div>
       <div class="form-group">
-        <label>Comentário Técnico</label>
+        <label>Comentário Técnico(Opcional)</label>
         <textarea [(ngModel)]="novaQuestao.comentarioTecnico" rows="4"></textarea>
       </div>
     </div>

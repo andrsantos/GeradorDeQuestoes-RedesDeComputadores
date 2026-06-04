@@ -1,59 +1,58 @@
 package com.Projeto.GeradorDeQuestoes.entities;
 
-import java.util.*;
 import jakarta.persistence.*;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tb_documentos_referencia")
 public class DocumentosReferenciaEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
-    private String topico;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pdf_binario_id")
-    private PdfBinarioEntity pdfBinario;
-
-    @Column(name = "fonte")
+    @Column(nullable = false)
     private String fonte;
 
-    public DocumentosReferenciaEntity() {
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "topico_id", nullable = false)
+    private TopicoEntity topico;
 
-    public String getFonte() {
-        return this.fonte;
-    }
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "pdf_binario_id", referencedColumnName = "id")
+    private PdfBinarioEntity pdfBinario; 
 
-    public void setFonte(String fonte) {
-        this.fonte = fonte;
-    }
+    public DocumentosReferenciaEntity() {}
 
     public UUID getId() {
-        return this.id;
+        return id;
     }
 
     public void setId(UUID id) {
         this.id = id;
     }
 
-    public String getTopico() {
-        return this.topico;
+    public String getFonte() {
+        return fonte;
     }
 
-    public void setTopico(String topico) {
+    public void setFonte(String fonte) {
+        this.fonte = fonte;
+    }
+
+    public TopicoEntity getTopico() {
+        return topico;
+    }
+
+    public void setTopico(TopicoEntity topico) {
         this.topico = topico;
     }
 
     public PdfBinarioEntity getPdfBinario() {
-        return this.pdfBinario;
+        return pdfBinario;
     }
 
     public void setPdfBinario(PdfBinarioEntity pdfBinario) {
         this.pdfBinario = pdfBinario;
     }
-
-
-
 }

@@ -46,6 +46,8 @@ export class ProvaBuilder implements OnInit {
   isLoadingFinalizar = false;
   isLoadingAdicionar = false;
   isLoadingCriar = false;
+  public isLoadingAssuntos: boolean = true; 
+
 
   public editando: EstadoEdicao | null = null;
   descartandoIndex: number | null = null;
@@ -63,10 +65,18 @@ export class ProvaBuilder implements OnInit {
   ) { }
 
   ngOnInit(): void {
+   
     this.onCriarProva();
-    this.provaService.getTopicosDisponiveis().subscribe(topicos => {
+    this.provaService.getTopicosDisponiveis().subscribe({
+      next: (topicos) => {
         this.assuntosDisponiveis = topicos;
-      });
+        this.isLoadingAssuntos = false;
+      },
+      error: () => {
+        this.isLoadingAssuntos = false;
+      }
+    });
+
   }
 
   isConceitoComboSelecionado(conceito: string): boolean {
@@ -152,9 +162,10 @@ onGerarProvaBanco() {
     this.prova$ = this.provaService.gerarProvaBanco(this.provaId, payloadAgrupado).pipe(shareReplay(1));
     
     this.prova$.subscribe({
-      next: () => {
+      next: (prova) => {
         this.isLoadingAdicionar = false;
         this.toastr.success('As questões foram adicionadas a prova!', 'Sucesso');
+        console.log("Prova", prova);
       },
       error: (err) => {
         this.isLoadingAdicionar = false; 
